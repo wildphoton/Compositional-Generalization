@@ -1,0 +1,28 @@
+name: disent-and-gen
+channels:
+- pytorch
+- conda-forge
+dependencies:
+- python=3.8
+- pip
+- pytorch=1.7.0
+- torchvision=0.8.0
+- cudatoolkit=10.2
+- ignite
+- scikit-learn
+- scikit-image
+- matplotlib
+- seaborn
+- pandas
+- pyyaml
+- mako
+- pip:
+  - jupyter
+  - sacred
+  - incense
+  - tqdm
+  - pymongo
+  - tinydb
+  - tinydb-serialization
+  - hashfs
+  - h5py
