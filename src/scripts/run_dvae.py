@@ -14,22 +14,24 @@ def main():
     parser = argparse.ArgumentParser(description='Generic runner for VAE models')
     add_vae_argument(parser)
     args = parser.parse_args()
+    args.filename = 'configs/discrete_vae.yaml'
     config, sklearn_eval_cfg, linear_eval_cfg = setup_experiment(args)
 
-    # setting hyperparameters
     versions = ((1,),)
     for data in ['dsprites90d']:
         for gen_type in ['random', ]:
             for version in versions[args.version_id]:
                 for seed in (2001, ):
-                    for recon_loss, beta in product(('mse', ), (0, 0.5, 1, 2, 8, 12, )):
+                    for recon_loss, beta, dict_size in product(('mse', ), (8, ), (256, 512)):
 
                         config['model_params']['beta'] = beta
                         config['model_params']['latent_dim'] = 10
+                        config['model_params']['dictionary_size'] = dict_size
                         config['model_params']['recon_loss'] = recon_loss
 
                         config['exp_params']['random_seed'] = seed
                         config['exp_params']['max_epochs'] = 100
+                        # config['exp_params']['batch_size'] = 512
 
                         config['exp_params']['dataset'] = '{}_{}_v{}'.format(data, gen_type, version)
 
@@ -38,7 +40,7 @@ def main():
                         if args.sklearn:
                             # sklearn eval
                             # for mode, n_train in product(('post', ), (1000, ), ):
-                            for mode, n_train in product(('latent', 'pre', 'post'), (1000, ), ):
+                            for mode, n_train in product(('post', 'latent', 'pre', ), (1000, ), ):
                                 config['eval_params'] = sklearn_eval_cfg
                                 config['eval_params']['mode'] = mode
                                 config['eval_params']['n_train'] = n_train

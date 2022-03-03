@@ -7,13 +7,11 @@ import sys
 sys.path.append(os.path.realpath('..'))
 from math import sqrt
 import torch
-from torch import nn
 from torch.nn import functional as F
 import torchvision.utils as vutils
 
 from .types_ import *
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import TestTubeLogger, NeptuneLogger, WandbLogger
 
 from architectures import build_cnn
 from evaluation.dci import DCIMetrics
@@ -62,38 +60,60 @@ class VAE(pl.LightningModule):
 
     def setup_models(self):
         self.encoder_conv, self.encoder_latent, self.decoder_latent, self.decoder_conv = build_cnn(
-            self.input_size, self.architecture, self.latent_dim)
+            self.input_size, self.architecture, self.latent_dim, model=self.__class__.__name__)
 
-    def encode(self, input: Tensor) -> List[Tensor]:
+    def encode_latent(self, feat, sampling):
+        """
+        Encode the feature from backbone to latent variables and reparameterize it
+        :param emb:
+        :param sampling: (Bool) if sample from latent distribution
+        :return:
+        """
+        latent = self.encoder_latent(feat)
+        results = self.reparameterize(latent, sampling=sampling)
+        return results
+
+    def decode_latent(self, z):
+        """
+        Decode latent variable z into a feature
+        :param z:
+        :return:
+        """
+        return self.decoder_latent(z)
+
+    def encode(self, input: Tensor, sampling) -> List[Tensor]:
         """
         Encodes the input by passing through the encoder network
         and returns the latent codes.
         :param input: (Tensor) Input tensor to encoder [N x C x H x W]
+        :param sampling: (Bool) if sample from latent distribution
         :return: (Tensor) mean and variation logits of latent distribution
         """
-        emb = self.encoder_conv(input)
-        latent = self.encoder_latent(emb)
-        mu, log_var = torch.split(latent, self.latent_dim, dim=1)
-        return mu, log_var
+        feat = self.encoder_conv(input)
+        res = self.encode_latent(feat, sampling=sampling)
+        return res
 
-    def decode(self, z: Tensor) -> Tensor:
+    def decode(self, inputs: Tensor) -> Tensor:
         """
         Maps the given latent codes
         onto the image space.
-        :param z: (Tensor) [B x D]
+        :param inputs: A dictionary of encoder outputs
         :return: (Tensor) [B x C x H x W]
         """
-        return self.decoder_conv(self.decoder_latent(z))
+        return self.decoder_conv(self.decode_latent(inputs['z']))
 
-    def reparameterize(self, mu: Tensor, logvar: Tensor) -> Tensor:
+    def reparameterize(self, latent: dict, sampling) -> dict:
         """
         Reparameterization trick to sample from N(mu, var) from
         N(0,1).
-        :param mu: (Tensor) Mean of the latent Gaussian [B x D]
-        :param logvar: (Tensor) Standard deviation of the latent Gaussian [B x D]
-        :return: (Tensor) [B x D]
+        :param Input dictionary with two keys:
+            mu: (Tensor) Mean of the latent Gaussian [B x D]
+            logvar: (Tensor) Standard deviation of the latent Gaussian [B x D]
+        :param sampling: (Bool) if sample from latent distribution
+        :return: output dictionary
         """
-        std = torch.exp(0.5 * logvar)
+        mu, log_var = torch.split(latent, self.latent_dim, dim=1)
+        std = torch.exp(0.5 * log_var)
         # prior
         p = torch.distributions.Normal(torch.zeros_like(mu), torch.ones_like(std))
 
@@ -102,32 +122,35 @@ class VAE(pl.LightningModule):
         except:
             print(mu, std)
         return {
+            'mu': mu,
+            'log_var': log_var,
             'prior': p,
             'posterior': q,
-            'sampled_z': q.rsample()
+            'z': q.rsample() if sampling else mu,
         }
 
     def forward(self, input: Tensor, **kwargs) -> List[Tensor]:
-        mu, log_var = self.encode(input)
-        results = self.reparameterize(mu, log_var)
-        results['recon'] = self.decode(results['sampled_z'])
-        results['mu'] = mu
-        results['log_var'] = log_var
+        results = self.encode(input, sampling=self.training)
+        results['recon'] = self.decode(results)
         return results
 
     def embed(self, x, mode, sampling=True, **kwargs):
+        """
+        Function to call to use VAE as a backbone model for downstream tasks
+        :param x:
+        :param mode:
+        :param sampling:
+        :param kwargs:
+        :return:
+        """
         if mode == 'pre':
             return self.encoder_conv(x)
         else:
-            mu, log_var = self.encode(x)
-            if sampling and self.training:
-                z = self.reparameterize(mu, log_var)['sampled_z']
-            else:
-                z = mu
+            enc_res = self.encode(x, sampling=sampling)
             if mode == 'latent':
-                return z
+                return enc_res['z']
             elif mode == 'post':
-                return self.decoder_latent(z)
+                return self.decoder_latent(enc_res['z'])
             else:
                 raise ValueError()
 
@@ -137,21 +160,20 @@ class VAE(pl.LightningModule):
         elif self.recon_loss == 'bce':
             recon_loss = F.binary_cross_entropy_with_logits(results['recon'], inputs, reduction='sum') / inputs.size(0)
 
-        # p, q, z = results['prior'], results['posterior'], results['sampled_z']
-        # # kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim = 1), dim = 0)
-        # log_qz = q.log_prob(z)
-        # log_pz = p.log_prob(z)
-        #
-        # kl = log_qz - log_pz
+        loss = recon_loss
+
+        kld_loss = self.compute_KLD_loss(results)
+
+        if self.beta > 0:
+            loss += kld_loss * self.beta
+        loss_dict = {'loss': loss, 'recon_loss': recon_loss, 'kl_loss': kld_loss}
+        return loss_dict
+
+    def compute_KLD_loss(self, results):
         mu = results['mu']
         log_var = results['log_var']
-        kl = -0.5 * (1 + log_var - mu ** 2 - log_var.exp()).sum(1).mean()
-
-        loss = recon_loss
-        if self.beta > 0:
-            loss += kl * self.beta
-        loss_dict = {'loss': loss, 'recon_loss': recon_loss, 'kl_loss': kl}
-        return loss_dict
+        kl = -0.5 * ((1 + log_var - mu ** 2 - log_var.exp()).sum(1).mean(0))
+        return kl
 
     def step(self, batch, batch_idx, stage='train') -> dict:
         """
@@ -169,10 +191,6 @@ class VAE(pl.LightningModule):
         if batch_idx == 0 and self.logger and stage != 'test':
             self.sample_images(batch, stage=stage)
 
-        # if stage == 'test':
-        #     z = self.embed(x, mode='latent', sampling=False)
-        #     log['z'] = z
-        #     log['y'] = y
         return loss_dict['loss'], log
 
     def training_step(self, batch, batch_idx, optimizer_idx = 0):
@@ -196,10 +214,6 @@ class VAE(pl.LightningModule):
                 metrics['{}'.format(key)] = torch.stack([x[key] for x in outputs]).mean()
         self.log_dict({key: val.item() for key, val in metrics.items()}, prog_bar=False)
 
-        # Zs = torch.cat([output['z'] for output in outputs], dim=0).float()
-        # Ys = torch.cat([output['y'] for output in outputs], dim=0).float()
-        # dci_metric = DCIMetrics(None, n_factors=Ys.size(1))
-        # dci_score = dci_metric(model=None, model_zs=(Zs.numpy(), Ys.numpy()))[2]
         dci_metric = DCIMetrics(self.trainer.datamodule.train_dataloader(),
                    n_factors=self.trainer.datamodule.train_dataset.n_gen_factors)
         dci_score = dci_metric(model=self)[2]
@@ -217,24 +231,6 @@ class VAE(pl.LightningModule):
         optimizer = init_optimizer(self.optim, self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         return {'optimizer': optimizer}
 
-    def sample(self,
-               num_samples:int,
-               current_device: int, **kwargs) -> Tensor:
-        """
-        Samples from the latent space and return the corresponding
-        image space map.
-        :param num_samples: (Int) Number of samples
-        :param current_device: (Int) Device to run the model
-        :return: (Tensor)
-        """
-        z = torch.randn(num_samples,
-                        self.latent_dim)
-
-        z = z.to(current_device)
-
-        samples = self.decode(z)
-        return samples
-
     def sample_images(self, batch, num=25, stage='train'):
         # Get sample reconstruction image
         inputs, labels = batch
@@ -251,18 +247,6 @@ class VAE(pl.LightningModule):
         self.logger.log_image(key=f'recon_{stage}', images=[recon_grids],
                               caption=[f'epoch_{self.current_epoch}'])
         del inputs, recons
-
-    def log_image(self, img_name, img, description=None):
-        if isinstance(self.logger, TestTubeLogger):
-            self.logger.experiment.add_image(img_name, img, self.current_epoch)
-        elif isinstance(self.logger, NeptuneLogger):
-            if isinstance(img, torch.Tensor) and len(img.size())==3 and img.size(0) <=3:
-                img = img.permute([1,2,0]).detach().cpu()
-            self.logger.experiment.log_image(img_name, x=self.current_epoch, y=img.detach().cpu())
-        elif isinstance(self.logger, WandbLogger):
-            self.logger.log_image(key=img_name, images=[img], caption=[description])
-        else:
-            raise NotImplementedError('The log image function for {} is not implemented yet'.format(type(self.logger)))
 
     @property
     def name(self) -> str:

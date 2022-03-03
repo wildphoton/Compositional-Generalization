@@ -38,12 +38,19 @@ arch_configs= {
     }
 }
 
-def build_cnn(input_size, name, latent_size):
+def build_cnn(input_size, name, latent_size, model):
     config = arch_configs[name]
     encoder_cnn_config = config['encoder_cnn'][:]
     encoder_cnn = FeedForward(input_size, encoder_cnn_config, flatten=False)
     encoder_latent_config = config['encoder_latent'][:]
-    encoder_latent_config += [('linear', [2 * latent_size])]
+    if model == 'VAE':
+        # mu and log_variance
+        encoder_latent_config += [('linear', [2 * latent_size])]
+    elif model == 'DiscreteVAE':
+        # latent size = number of discrete code * n_classes
+        encoder_latent_config += [('linear', [latent_size])]
+    else:
+        raise NotImplementedError(f'Not implemented for {model}')
     encoder_latent = FeedForward(encoder_cnn.output_size, encoder_latent_config, flatten=False)
 
     if 'decoder_layers' in config:
@@ -52,7 +59,10 @@ def build_cnn(input_size, name, latent_size):
     else:
         decoder_cnn_config = encoder_cnn_config[:]
         decoder_latent_config = encoder_latent_config[:-1]
-        decoder_latent_config.append(('linear', [latent_size]))
+        if model == 'VAE' or model == 'DiscreteVAE':
+            decoder_latent_config.append(('linear', [latent_size]))
+        else:
+            raise NotImplementedError(f'Not implemented for {model}')
         decoder_latent_config = transpose_layer_defs(decoder_latent_config, encoder_latent.input_size)
         decoder_cnn_config = transpose_layer_defs(decoder_cnn_config, input_size)
 
