@@ -2,17 +2,20 @@
 """
 Created by zhenlinx on 03/31/2021
 """
+import os
+import sys
+sys.path.append(os.path.realpath('..'))
+
 from itertools import chain
-from typing import *
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
 import pytorch_lightning as pl
 import pl_bolts
-from torchmetrics import Accuracy, MeanSquaredError, R2Score
+from torchmetrics import Accuracy, R2Score
 from datasets import DSprites
-from utils.group_metric import GroupMetric
-
+from typing import *
+from evaluation.group_metric import GroupMetric
 
 class TaskHeadMLP(torch.nn.Module):
     """

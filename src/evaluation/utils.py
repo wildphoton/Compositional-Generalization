@@ -13,7 +13,6 @@ def infer(model, dataloader, mode):
         for x, t in dataloader:
             x = x.to(device=device)
             z = model.embed(x, mode)
-
             latents.append(z.cpu())
             targets.append(t)
 
