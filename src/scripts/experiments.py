@@ -13,7 +13,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor
 from models import vae_models
 from datasets import get_datamodule
 from evaluation import ScikitLearnEvaluator, RepFineTuner
-from utils.callbacks import MyModelCheckpoint
+from commons.callbacks import MyModelCheckpoint
 
 sys.path.append(os.path.realpath('..'))
 
@@ -256,6 +256,7 @@ def scikitlearn_eval(config, args):
 
         if not os.path.isdir(ft_root):
             os.makedirs(ft_root, exist_ok=True)
+        eval_res = evaluator.eval()
 
         ft_logger = None if args.nowb else WandbLogger(project=args.project,
                                                        name=f"{evaluator.name}_{exp_name}",
@@ -264,12 +265,10 @@ def scikitlearn_eval(config, args):
                                                        config=config,
                                                        reinit=True
                                                        )
-        ft_logger.log_hyperparams(config)
-
-        eval_res = evaluator.eval()
-        ft_logger.log_metrics(eval_res)
 
         if ft_logger:
+            ft_logger.log_hyperparams(config)
+            ft_logger.log_metrics(eval_res)
             ft_logger.experiment.finish()
 
 

@@ -2,27 +2,25 @@
 """
 Created by zhenlinx on 10/22/2020
 """
-import os
-import sys
-sys.path.append(os.path.realpath('..'))
+# sys.path.append(os.path.realpath('..'))
 from math import sqrt
 import torch
 from torch.nn import functional as F
 import torchvision.utils as vutils
 
-from .types_ import *
 import pytorch_lightning as pl
 
-from architectures import build_cnn
+from architectures.helper import build_architectures
 from evaluation.dci import DCIMetrics
-from .optimizer import init_optimizer, init_lr_scheduler
+from .optimizer import init_optimizer
+from models.types_ import *
 
 
 class VAE(pl.LightningModule):
     def __init__(self,
                  input_size: List,
                  architecture: str,
-                 latent_dim: int,
+                 latent_size: int,
                  beta: float = 1.0,
                  recon_loss: str = 'mse',
                  lr: float = 0.001,
@@ -33,7 +31,7 @@ class VAE(pl.LightningModule):
 
         :param input_size: (n_channels, image_height, image_width)
         :param architecture:
-        :param latent_dim:
+        :param latent_size:
         :param img_size:
         :param beta:
         :param recon_loss: 'mse' for Gaussian decoder and 'bce' for the bernoulli decoder
@@ -46,7 +44,7 @@ class VAE(pl.LightningModule):
         super(VAE, self).__init__()
 
         self.save_hyperparameters()
-        self.latent_dim = latent_dim
+        self.latent_size = latent_size
         self.architecture = architecture
         self.input_size = input_size
         self.beta = beta
@@ -59,8 +57,8 @@ class VAE(pl.LightningModule):
         pass
 
     def setup_models(self):
-        self.encoder_conv, self.encoder_latent, self.decoder_latent, self.decoder_conv = build_cnn(
-            self.input_size, self.architecture, self.latent_dim, model=self.__class__.__name__)
+        (self.encoder_conv, self.decoder_conv), (self.encoder_latent, self.decoder_latent) = build_architectures(
+            self.input_size, self.architecture, self.latent_size, model=self.__class__.__name__)
 
     def encode_latent(self, feat, sampling):
         """
@@ -112,7 +110,7 @@ class VAE(pl.LightningModule):
         :param sampling: (Bool) if sample from latent distribution
         :return: output dictionary
         """
-        mu, log_var = torch.split(latent, self.latent_dim, dim=1)
+        mu, log_var = torch.split(latent, self.latent_size, dim=1)
         std = torch.exp(0.5 * log_var)
         # prior
         p = torch.distributions.Normal(torch.zeros_like(mu), torch.ones_like(std))
@@ -134,7 +132,7 @@ class VAE(pl.LightningModule):
         results['recon'] = self.decode(results)
         return results
 
-    def embed(self, x, mode, sampling=True, **kwargs):
+    def embed(self, x, mode, sampling=False, **kwargs):
         """
         Function to call to use VAE as a backbone model for downstream tasks
         :param x:
@@ -276,12 +274,12 @@ class VAE(pl.LightningModule):
         """
         return "{}_z{}".format(
             self.architecture,
-            self.latent_dim,
+            self.latent_size,
         )
 
     def get_rep_size(self, mode):
         if mode == 'latent':
-            return self.latent_dim
+            return self.latent_size
         elif mode == 'pre':
             return self.encoder_conv.output_size
         elif mode == 'post':

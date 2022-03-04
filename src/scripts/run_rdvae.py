@@ -22,12 +22,14 @@ def main():
         for gen_type in ['random', ]:
             for version in versions[args.version_id]:
                 for seed in (2001, ):
-                    for recon_loss, beta, latent_size, dict_size in product(('bce', ), (0, ), (10, ), (256, )):
+                    for recon_loss, beta, latent_size, dict_size in product(('mse', 'bce'), (0, ), (10, ), (512, )):
 
+                        config['model_params']['name'] = 'RecurrentDiscreteVAE'
                         config['model_params']['beta'] = beta
                         config['model_params']['latent_size'] = latent_size
                         config['model_params']['dictionary_size'] = dict_size
                         config['model_params']['recon_loss'] = recon_loss
+                        config['model_params']['fix_length'] = False
 
                         config['exp_params']['random_seed'] = seed
                         config['exp_params']['max_epochs'] = 100
@@ -39,8 +41,8 @@ def main():
 
                         if args.sklearn:
                             # sklearn eval
-                            # for mode, n_train in product(('post', ), (1000, ), ):
-                            for mode, n_train in product(('post', 'latent', 'pre', ), (1000, ), ):
+                            for mode, n_train in product(('post', ), (1000, ), ):
+                            # for mode, n_train in product(('post',  'pre', ), (1000, ), ):
                                 config['eval_params'] = sklearn_eval_cfg
                                 config['eval_params']['mode'] = mode
                                 config['eval_params']['n_train'] = n_train

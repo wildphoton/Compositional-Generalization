@@ -3,8 +3,6 @@
 Created by zhenlinx on 04/13/2021
 """
 from pytorch_lightning.callbacks import ModelCheckpoint
-from typing import Any, Dict, Optional, Union
-
 
 class MyModelCheckpoint(ModelCheckpoint):
     # def _get_metric_interpolated_filepath_name(

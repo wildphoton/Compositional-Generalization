@@ -2,7 +2,7 @@ model_params:
   name: 'DiscreteVAE'
   input_size: [1, 64, 64]
   architecture: 'burgess'
-  latent_dim: 10
+  latent_size: 10
   dictionary_size: 128
   beta: 0.0
   lr: 0.0001

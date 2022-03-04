@@ -25,7 +25,7 @@ def main():
                     for recon_loss, beta in product(('mse', ), (0, 0.5, 1, 2, 8, 12, )):
 
                         config['model_params']['beta'] = beta
-                        config['model_params']['latent_dim'] = 10
+                        config['model_params']['latent_size'] = 10
                         config['model_params']['recon_loss'] = recon_loss
 
                         config['exp_params']['random_seed'] = seed
