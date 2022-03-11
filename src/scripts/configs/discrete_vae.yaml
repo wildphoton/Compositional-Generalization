@@ -32,9 +32,9 @@ exp_params:
 #  val_steps: 10000
 #  optim: 'SGD'
 
-eval_params:
-  mode: 'latent'
-  n_train: 1000
+#eval_params:
+#  mode: 'latent'
+#  n_train: 1000
 
 trainer_params:
   gpus: [0, ]

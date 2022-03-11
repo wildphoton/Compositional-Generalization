@@ -128,7 +128,7 @@ def finetune_eval(config, args):
         exp_root = os.path.join(config['logging_params']['save_dir'],
                                 config['exp_params']['dataset'],
                                 exp_name, f"version_{config['exp_params']['random_seed']}")
-        ckpoint_path = os.path.join(exp_root, 'checkpoints', 'last.ckpt')
+        ckpoint_path = os.path.join(exp_root, 'checkpoints', f"{config['eval_params']['ckpoint']}.ckpt")
 
         dm = get_datamodule(config['exp_params']['dataset'],
                             data_dir=config['exp_params']['data_path'],
@@ -230,7 +230,7 @@ def scikitlearn_eval(config, args):
         exp_root = os.path.join(config['logging_params']['save_dir'],
                                 config['exp_params']['dataset'],
                                 exp_name, f"version_{config['exp_params']['random_seed']}")
-        ckpoint_path = os.path.join(exp_root, 'checkpoints', 'last.ckpt')
+        ckpoint_path = os.path.join(exp_root, 'checkpoints', f"{config['eval_params']['ckpoint']}.ckpt")
 
         dm = get_datamodule(config['exp_params']['dataset'],
                             data_dir=config['exp_params']['data_path'],

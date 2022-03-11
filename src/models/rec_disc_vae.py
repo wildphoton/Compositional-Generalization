@@ -82,3 +82,13 @@ class RecurrentDiscreteVAE(DiscreteVAE):
             self.dictionary_size,
             self.gsm_temperature
         )
+
+    def get_rep_size(self, mode):
+        if mode == 'latent':
+            return self.latent_size
+        elif mode == 'pre':
+            return self.encoder_conv.output_size
+        elif mode == 'post':
+            return self.latent_layers.output_size
+        else:
+            raise ValueError()

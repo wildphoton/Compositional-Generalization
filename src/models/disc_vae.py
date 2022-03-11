@@ -33,7 +33,8 @@ class DiscreteVAE(VAE):
         self.soft_discrete = soft_discrete
 
         super(DiscreteVAE, self).__init__(
-            input_size, architecture, latent_size, beta, recon_loss, lr, optim, weight_decay, **kwargs)
+            input_size=input_size, architecture=architecture, latent_size=latent_size, beta=beta, recon_loss=recon_loss,
+            lr=lr, optim=optim, weight_decay=weight_decay, **kwargs)
 
         # prior distributions (logP)
         prior = torch.log(

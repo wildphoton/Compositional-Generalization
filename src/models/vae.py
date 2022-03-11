@@ -22,6 +22,10 @@ class VAE(pl.LightningModule):
                  architecture: str,
                  latent_size: int,
                  beta: float = 1.0,
+                 icc: bool = False,
+                 icc_max: float = 20,
+                 icc_min: float = 0,
+                 icc_steps: float = 10000,
                  recon_loss: str = 'mse',
                  lr: float = 0.001,
                  optim: str = 'adam',
@@ -34,6 +38,7 @@ class VAE(pl.LightningModule):
         :param latent_size:
         :param img_size:
         :param beta:
+        :param icc: |KL - C|*beta with a increasing schedule on C based on: Understanding disentangling in β-VAE  https://arxiv.org/pdf/1804.03599.pdf
         :param recon_loss: 'mse' for Gaussian decoder and 'bce' for the bernoulli decoder
         :param lr:
         :param optim:
@@ -49,6 +54,13 @@ class VAE(pl.LightningModule):
         self.input_size = input_size
         self.beta = beta
         self.recon_loss = recon_loss
+
+        # information capacity control hyperparameters
+        # in original paper, icc is from 0 to 25 nats, icc_step = 100000 iters, beta=1000
+        self.icc = icc
+        self.icc_max = icc_max
+        self.icc_min = icc_min
+        self.icc_steps = icc_steps
 
         self.optim = optim
         self.lr = lr
@@ -163,7 +175,12 @@ class VAE(pl.LightningModule):
         kld_loss = self.compute_KLD_loss(results)
 
         if self.beta > 0:
-            loss += kld_loss * self.beta
+            if self.icc:
+                capacity = min(self.icc_max,
+                               self.icc_min + (self.icc_max - self.icc_min) * self.global_step / self.icc_steps)
+                loss += (kld_loss - capacity).abs() * self.beta
+            else:
+                loss += kld_loss * self.beta
         loss_dict = {'loss': loss, 'recon_loss': recon_loss, 'kl_loss': kld_loss}
         return loss_dict
 
@@ -258,10 +275,11 @@ class VAE(pl.LightningModule):
         """
         Get the name of the model according its parameters
         """
-        return "{}_{}_beta{}_{}_lr{}_{}_wd{}".format(
+        return "{}_{}_beta{}{}_{}_lr{}_{}_wd{}".format(
             self.__class__.__name__,
             self.make_backbone_name(),
             self.beta,
+            f'_icc{self.icc_min}-{self.icc_max}-{self.icc_steps}steps' if self.icc else '',
             self.recon_loss,
             self.lr,
             self.optim,
