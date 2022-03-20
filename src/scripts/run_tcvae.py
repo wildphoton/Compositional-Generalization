@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 """
-Training beta-VAE with information capacity control
-
 Created by zhenlinx on 03/30/2021
 """
 import os
@@ -24,18 +22,16 @@ def main():
         for gen_type in ['random', ]:
             for version in versions[args.version_id]:
                 for seed in (2001, ):
-                    for recon_loss, beta, c_max in product(('bce', ), (1000, ), (25, )):
+                    for recon_loss, beta in product(('bce', ), (0.7, )):
 
+                        config['model_params']['name'] = 'BetaTCVAE'
                         config['model_params']['beta'] = beta
                         config['model_params']['latent_size'] = 10
-                        config['model_params']['icc'] = True
-                        config['model_params']['icc_max'] = c_max
-                        config['model_params']['icc_min'] = 5
-                        config['model_params']['icc_steps'] = 100000
                         config['model_params']['recon_loss'] = recon_loss
 
                         config['exp_params']['random_seed'] = seed
                         config['exp_params']['max_epochs'] = 100
+
                         config['exp_params']['dataset'] = '{}_{}_v{}'.format(data, gen_type, version)
 
                         train_vae(config, args)

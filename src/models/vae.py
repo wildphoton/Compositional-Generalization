@@ -25,7 +25,7 @@ class VAE(pl.LightningModule):
                  icc: bool = False,
                  icc_max: float = 20,
                  icc_min: float = 0,
-                 icc_steps: float = 10000,
+                 icc_steps: float = 100000,
                  recon_loss: str = 'mse',
                  lr: float = 0.001,
                  optim: str = 'adam',
@@ -165,15 +165,11 @@ class VAE(pl.LightningModule):
                 raise ValueError()
 
     def compute_loss(self, inputs, results, labels=None):
-        if self.recon_loss == 'mse':
-            recon_loss = F.mse_loss(results['recon'], inputs, reduction='sum') / inputs.size(0)
-        elif self.recon_loss == 'bce':
-            recon_loss = F.binary_cross_entropy_with_logits(results['recon'], inputs, reduction='sum') / inputs.size(0)
-
-        loss = recon_loss
+        recon_loss = self.compute_recontruct_loss(inputs, results)
 
         kld_loss = self.compute_KLD_loss(results)
 
+        loss = recon_loss
         if self.beta > 0:
             if self.icc:
                 capacity = min(self.icc_max,
@@ -183,6 +179,13 @@ class VAE(pl.LightningModule):
                 loss += kld_loss * self.beta
         loss_dict = {'loss': loss, 'recon_loss': recon_loss, 'kl_loss': kld_loss}
         return loss_dict
+
+    def compute_recontruct_loss(self, inputs, results):
+        if self.recon_loss == 'mse':
+            recon_loss = F.mse_loss(results['recon'], inputs, reduction='sum') / inputs.size(0)
+        elif self.recon_loss == 'bce':
+            recon_loss = F.binary_cross_entropy_with_logits(results['recon'], inputs, reduction='sum') / inputs.size(0)
+        return recon_loss
 
     def compute_KLD_loss(self, results):
         mu = results['mu']

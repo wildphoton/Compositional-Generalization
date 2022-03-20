@@ -22,7 +22,7 @@ def main():
         for gen_type in ['random', ]:
             for version in versions[args.version_id]:
                 for seed in (2001, ):
-                    for recon_loss, beta in product(('mse', ), (0, 0.5, 1, 2, 8, 12, )):
+                    for recon_loss, beta in product(('mse', ), (0.1, )):
 
                         config['model_params']['beta'] = beta
                         config['model_params']['latent_size'] = 10
