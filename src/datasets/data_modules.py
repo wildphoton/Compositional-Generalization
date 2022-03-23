@@ -10,28 +10,71 @@ import pytorch_lightning as pl
 
 from .dsprites import DSprites
 from .multi_dsprites import MultiDsprites
+from .mpi3d import MPI3D
+
+DATASETS_DICT = {
+                # "mnist": "MNIST",
+#                  "fashion": "FashionMNIST",
+                 "dsprites": DSprites,
+                 "dsprites90d": DSprites,
+                 "multidsprites": MultiDsprites,
+                 "mpi3d": MPI3D,
+                 # "celeba": "CelebA",
+                 # "celeba": "CelebA",
+                 # "chairs": "Chairs"
+}
 
 
-class DSpritesDataModule(pl.LightningDataModule):
-
+class MetaDataModule(pl.LightningDataModule):
     def __init__(self, name, data_dir, batch_size: int = 128, num_workers=4, n_train=None, virtual_n_samples=None, **dataset_config):
-        super(DSpritesDataModule, self).__init__()
+        super(MetaDataModule, self).__init__()
         self.name = name
         self.data_dir = data_dir
         self.batch_size = batch_size
-        # self.transform = transforms.Normalize((0.5,), (0.5,))
         self.transform = None
         self.num_workers = num_workers
-        self.n_train = n_train # use only partial of training set
-        self.virtual_n_samples = virtual_n_samples # change the number of samples to be total training steps for prefetching purpose
-        if self.name.split('_')[0] == 'multidsprites':
-            self.dataset_class = MultiDsprites
-        else:
-            self.dataset_class = DSprites
-        self.num_classes = self.dataset_class.NUM_CLASSES # unique classes for each attribute
+        self.n_train = n_train  # use only partial of training set
+        self.virtual_n_samples = virtual_n_samples  # change the number of samples to be total training steps for prefetching purpose
         self.dataset_config = dataset_config
 
+        self.class_name = self.name.split('_')[0]
+        self.dataset_class = DATASETS_DICT[self.class_name]
+        self.num_classes = self.dataset_class.NUM_CLASSES # unique classes for each attribute
+
+        self.train_ind = None
+        self.test_ind = None
+        self.train_dataset = None
+        self.test_dataset = None
+
+    def prepare_data(self) -> None:
+        raise NotImplementedError()
+
+    def train_dataloader(self):
+        return DataLoader(self.train_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=True,
+                          drop_last=False,
+                          num_workers=self.num_workers,
+                          pin_memory=True,
+                          persistent_workers=self.num_workers>0,
+                          )
+
+    def val_dataloader(self):
+        return self.test_dataloader()
+
+    def test_dataloader(self):
+        return DataLoader(self.test_dataset,
+                          batch_size=self.batch_size,
+                          shuffle=False,
+                          drop_last=False,
+                          num_workers=self.num_workers)
+
+class DSpritesDataModule(MetaDataModule):
     def prepare_data(self):
+        # the name is formated as CLASSNAME_MODE_VERSION
+        self.mode = self.name.split('_')[1]
+        self.version = self.name.split('_')[2]
+
         if self.name.split('_')[0] == 'dsprites':
 
             if self.name.split('_')[1] == 'element':
@@ -51,7 +94,6 @@ class DSpritesDataModule(pl.LightningDataModule):
                 self.test_ind = self.train_ind
 
         elif self.name.split('_')[0] == 'dsprites90d':
-            transform = transforms.Normalize((0.5,), (0.5,))
             range_all = [np.arange(3), np.arange(6), np.arange(10), np.arange(32), np.arange(32)]
             if self.name.split('_')[1] == 'element':
                 if self.name.split('_')[2] == 'v1':
@@ -180,6 +222,7 @@ class DSpritesDataModule(pl.LightningDataModule):
         else:
             raise ValueError('Undefined dataset type')
 
+
     def setup(self, *args, **kwargs):
         self.train_dataset = self.dataset_class(root=self.data_dir,
                                       range=self.train_ind,
@@ -193,24 +236,52 @@ class DSpritesDataModule(pl.LightningDataModule):
                                      **self.dataset_config
                                      )
 
-    def train_dataloader(self):
-        return DataLoader(self.train_dataset,
-                          batch_size=self.batch_size,
-                          shuffle=True,
-                          drop_last=False,
-                          num_workers=self.num_workers,
-                          pin_memory=True,
-                          persistent_workers=self.num_workers>0,
-                          )
-
-    def val_dataloader(self):
-        return self.test_dataloader()
-
-    def test_dataloader(self):
-        return DataLoader(self.test_dataset,
-                          batch_size=self.batch_size,
-                          shuffle=False,
-                          drop_last=False,
-                          num_workers=self.num_workers)
 
 
+
+class MPI3DDataModule(MetaDataModule):
+    """
+    Supported name format : "mpi3d_{subset}_{split_mode}_v{version}"
+    subset = {toy, realistic, real}
+    split_mode = {random}
+    version = {}
+    """
+    def prepare_data(self) -> None:
+        self.subset_name = self.name.split('_')[1].lower()
+        self.mode = self.name.split('_')[2].lower()
+        self.version = self.name.split('_')[3].lower()
+
+        if self.mode == 'random':
+            test_sizes = {
+                'v1': 172800,  # 5: 1
+                'v2': 345600,  # 2: 1
+                'v3': 518400,  # 1: 1
+            }
+            test_size = test_sizes[self.version]
+
+            all_ind = list(np.arange(self.dataset_class.total_sample_size))
+            shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.name}_shuffled_ids.npy")
+            if os.path.isfile(shuffled_ids_cache_path):
+                print(f"Load shuffled ids at {shuffled_ids_cache_path}")
+                shuffled_ids = np.load(shuffled_ids_cache_path)
+            else:
+                print(f"Save shuffled ids at {shuffled_ids_cache_path}")
+                shuffled_ids = np.random.permutation(all_ind)
+                np.save(shuffled_ids_cache_path, shuffled_ids)
+
+            self.train_ind = shuffled_ids[test_size:]
+            self.test_ind = shuffled_ids[:test_size]
+
+        if self.n_train is not None:
+            self.train_ind = self.train_ind[:self.n_train]
+
+    def setup(self, *args, **kwargs):
+        self.train_dataset = self.dataset_class(root=self.data_dir,
+                                                range=self.train_ind,
+                                                subset=self.subset_name,
+                                                n_samples=self.virtual_n_samples,
+                                                )
+        self.test_dataset = self.dataset_class(root=self.data_dir,
+                                               range=self.test_ind,
+                                               subset=self.subset_name,
+                                               )

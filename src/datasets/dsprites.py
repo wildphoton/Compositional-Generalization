@@ -3,19 +3,13 @@
 Copied from https://github.com/YannDubs/disentangling-vae/blob/master/utils/datasets.py
 Created by zhenlinx on 02/24/2021
 """
-import subprocess
-import os
 import abc
-import hashlib
-import zipfile
-import glob
 import logging
-import tarfile
-# from skimage.io import imread
-from PIL import Image
-from tqdm import tqdm
-import numpy as np
+import os
+import subprocess
 
+# from skimage.io import imread
+import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 
@@ -23,13 +17,14 @@ DIR = os.path.abspath(os.path.dirname(__file__))
 COLOUR_BLACK = 0
 COLOUR_WHITE = 1
 DATASETS_DICT = {
-                # "mnist": "MNIST",
-#                  "fashion": "FashionMNIST",
-                 "dsprites": "DSprites",
-                 # "celeba": "CelebA",
-                 # "chairs": "Chairs"
+    # "mnist": "MNIST",
+    #                  "fashion": "FashionMNIST",
+    "dsprites": "DSprites",
+    # "celeba": "CelebA",
+    # "chairs": "Chairs"
 }
 DATASETS = list(DATASETS_DICT.keys())
+
 
 def get_dataset(dataset):
     """Return the correct dataset."""
@@ -147,7 +142,8 @@ class DSprites(DisentangledDataset):
         on Learning Representations.
 
     """
-    urls = {"train": "https://github.com/deepmind/dsprites-dataset/blob/master/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz?raw=true"}
+    urls = {
+        "train": "https://github.com/deepmind/dsprites-dataset/blob/master/dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz?raw=true"}
     files = {"train": "dsprite_train.npz"}
     lat_names = ('shape', 'scale', 'orientation', 'posX', 'posY')
     lat_sizes = np.array([3, 6, 40, 32, 32])
@@ -157,34 +153,34 @@ class DSprites(DisentangledDataset):
     total_sample_size = 737280
     background_color = COLOUR_BLACK
     latents_values = {'color': np.array([1.]),
-                  'shape': np.array([1., 2., 3.]),  # square, ellipse, heart
-                  'scale': np.array([0.5, 0.6, 0.7, 0.8, 0.9, 1.]),
-                  'orientation': np.array([0., 0.16110732, 0.32221463, 0.48332195,
-                                           0.64442926, 0.80553658, 0.96664389, 1.12775121,
-                                           1.28885852, 1.44996584, 1.61107316, 1.77218047,
-                                           1.93328779, 2.0943951, 2.25550242, 2.41660973,
-                                           2.57771705, 2.73882436, 2.89993168, 3.061039,
-                                           3.22214631, 3.38325363, 3.54436094, 3.70546826,
-                                           3.86657557, 4.02768289, 4.1887902, 4.34989752,
-                                           4.51100484, 4.67211215, 4.83321947, 4.99432678,
-                                           5.1554341, 5.31654141, 5.47764873, 5.63875604,
-                                           5.79986336, 5.96097068, 6.12207799, 6.28318531]),  # [0, 2 pi]
+                      'shape': np.array([1., 2., 3.]),  # square, ellipse, heart
+                      'scale': np.array([0.5, 0.6, 0.7, 0.8, 0.9, 1.]),
+                      'orientation': np.array([0., 0.16110732, 0.32221463, 0.48332195,
+                                               0.64442926, 0.80553658, 0.96664389, 1.12775121,
+                                               1.28885852, 1.44996584, 1.61107316, 1.77218047,
+                                               1.93328779, 2.0943951, 2.25550242, 2.41660973,
+                                               2.57771705, 2.73882436, 2.89993168, 3.061039,
+                                               3.22214631, 3.38325363, 3.54436094, 3.70546826,
+                                               3.86657557, 4.02768289, 4.1887902, 4.34989752,
+                                               4.51100484, 4.67211215, 4.83321947, 4.99432678,
+                                               5.1554341, 5.31654141, 5.47764873, 5.63875604,
+                                               5.79986336, 5.96097068, 6.12207799, 6.28318531]),  # [0, 2 pi]
                       'posX': np.array([0., 0.03225806, 0.06451613, 0.09677419, 0.12903226,
-                                    0.16129032, 0.19354839, 0.22580645, 0.25806452,
-                                    0.29032258, 0.32258065, 0.35483871, 0.38709677,
-                                    0.41935484, 0.4516129, 0.48387097, 0.51612903,
-                                    0.5483871, 0.58064516, 0.61290323, 0.64516129,
-                                    0.67741935, 0.70967742, 0.74193548, 0.77419355,
-                                    0.80645161, 0.83870968, 0.87096774, 0.90322581,
-                                    0.93548387, 0.96774194, 1.]),
+                                        0.16129032, 0.19354839, 0.22580645, 0.25806452,
+                                        0.29032258, 0.32258065, 0.35483871, 0.38709677,
+                                        0.41935484, 0.4516129, 0.48387097, 0.51612903,
+                                        0.5483871, 0.58064516, 0.61290323, 0.64516129,
+                                        0.67741935, 0.70967742, 0.74193548, 0.77419355,
+                                        0.80645161, 0.83870968, 0.87096774, 0.90322581,
+                                        0.93548387, 0.96774194, 1.]),
                       'posY': np.array([0., 0.03225806, 0.06451613, 0.09677419, 0.12903226,
-                                    0.16129032, 0.19354839, 0.22580645, 0.25806452,
-                                    0.29032258, 0.32258065, 0.35483871, 0.38709677,
-                                    0.41935484, 0.4516129, 0.48387097, 0.51612903,
-                                    0.5483871, 0.58064516, 0.61290323, 0.64516129,
-                                    0.67741935, 0.70967742, 0.74193548, 0.77419355,
-                                    0.80645161, 0.83870968, 0.87096774, 0.90322581,
-                                    0.93548387, 0.96774194, 1.]),
+                                        0.16129032, 0.19354839, 0.22580645, 0.25806452,
+                                        0.29032258, 0.32258065, 0.35483871, 0.38709677,
+                                        0.41935484, 0.4516129, 0.48387097, 0.51612903,
+                                        0.5483871, 0.58064516, 0.61290323, 0.64516129,
+                                        0.67741935, 0.70967742, 0.74193548, 0.77419355,
+                                        0.80645161, 0.83870968, 0.87096774, 0.90322581,
+                                        0.93548387, 0.96774194, 1.]),
                       }
 
     def __init__(self, root, range, use_latent_class=True, transform=None, n_samples=None, **kwargs):
@@ -205,7 +201,6 @@ class DSprites(DisentangledDataset):
         self.imgs = dataset_zip['imgs']
         self.latents_values = dataset_zip['latents_values'][:, 1:]
         self.latents_classes = dataset_zip['latents_classes'][:, 1:]
-
 
         self.imgs = self.imgs[range]
         self.latents_values = self.latents_values[range]
@@ -261,9 +256,8 @@ class DSprites(DisentangledDataset):
     #     :return: latent values
     #     """
 
-
     @staticmethod
-    def get_partition(range_all:list, range_test=None):
+    def get_partition(range_all: list, range_test=None):
         """
         Get a data partition given the range of each factor.
         :param range: a list of 5 arrays (color, shape, scale, rotation, pos_x, pos_y)
@@ -280,7 +274,7 @@ class DSprites(DisentangledDataset):
             return all_indices
         else:
             test_indices = DSprites.range_to_index(range_test)
-            assert len(np.setdiff1d(test_indices, all_indices)) == 0 # check if test indices is a subset of all indices
+            assert len(np.setdiff1d(test_indices, all_indices)) == 0  # check if test indices is a subset of all indices
             train_indices = np.setdiff1d(all_indices, test_indices)
             return train_indices, test_indices
 
@@ -295,7 +289,7 @@ class DSprites(DisentangledDataset):
             elif type(latent_range) is tuple:
                 multiple_indices_sampled = [DSprites.latent_to_index(
                     np.array(np.meshgrid(*range)).T.reshape(-1, len(range))) for range in latent_range]
-                indices_sampled = np.concatenate(multiple_indices_sampled,axis=0)
+                indices_sampled = np.concatenate(multiple_indices_sampled, axis=0)
             else:
                 raise ValueError()
             return indices_sampled
@@ -311,21 +305,18 @@ class DSprites(DisentangledDataset):
     # def __len__(self):
     #     return 1000
 
-
-
-
 # if __name__ == '__main__':
-    # transform = transforms.Normalize((0.5,), (0.5,))
-    # range_all = [np.arange(3), np.arange(6), np.arange(10), np.arange(32), np.arange(32)]
-    # range_test = [[1, ], [0, 1], np.arange(6, 10), np.arange(21, 32), np.arange(21, 32)]
-    # dataset = DSprites(root=os.path.join(DIR, '../data/dsprites/'),
-    #                    range_all=None,
-    #                    range_test=None,
-    #                    train=True,
-    #                    transform=None
-    #                    )
-    # dm = DSpritesDataModule(name='dsprites90d_random_v4', data_dir='../data/dsprites',
-    #                         batch_size = 128, num_workers=0, n_train=None)
-    # dm.prepare_data()
-    # dm.setup()
-    # pass
+# transform = transforms.Normalize((0.5,), (0.5,))
+# range_all = [np.arange(3), np.arange(6), np.arange(10), np.arange(32), np.arange(32)]
+# range_test = [[1, ], [0, 1], np.arange(6, 10), np.arange(21, 32), np.arange(21, 32)]
+# dataset = DSprites(root=os.path.join(DIR, '../data/dsprites/'),
+#                    range_all=None,
+#                    range_test=None,
+#                    train=True,
+#                    transform=None
+#                    )
+# dm = DSpritesDataModule(name='dsprites90d_random_v4', data_dir='../data/dsprites',
+#                         batch_size = 128, num_workers=0, n_train=None)
+# dm.prepare_data()
+# dm.setup()
+# pass
