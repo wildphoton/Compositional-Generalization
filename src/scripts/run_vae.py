@@ -17,28 +17,34 @@ def main():
     config, sklearn_eval_cfg, linear_eval_cfg = setup_experiment(args)
 
     # setting hyperparameters
-    versions = ((1,),)
-    for data in ['dsprites90d']:
+    versions = ((3,),)
+    # for data in ['dsprites90d']:
+    for data in ['mpi3d_real']:
         for gen_type in ['random', ]:
             for version in versions[args.version_id]:
                 for seed in (2001, ):
-                    for recon_loss, beta in product(('mse', ), (0.1, )):
+                    for recon_loss, beta in product(('bce', ), (0,)):
 
                         config['model_params']['beta'] = beta
                         config['model_params']['latent_size'] = 10
                         config['model_params']['recon_loss'] = recon_loss
 
                         config['exp_params']['random_seed'] = seed
-                        config['exp_params']['max_epochs'] = 100
-
                         config['exp_params']['dataset'] = '{}_{}_v{}'.format(data, gen_type, version)
+
+                        if 'mpi3d' in data:
+                            config['exp_params'][
+                                'data_path'] = '/playpen-raid2/zhenlinx/Data/disentanglement/mpi3d'
+                            config['exp_params']['max_epochs'] = 100  # 100 for dsprites and 50 for mpi3d
+                            config['model_params']['input_size'] = [3, 64, 64]
+                            config['model_params']['architecture'] = 'burgess_wide'
 
                         train_vae(config, args)
 
                         if args.sklearn:
                             # sklearn eval
                             # for mode, n_train in product(('post', ), (1000, ), ):
-                            for mode, n_train in product(('latent', 'pre', 'post'), (1000, ), ):
+                            for mode, n_train in product(('pre', 'post'), (1000, ), ):
                                 config['eval_params'] = sklearn_eval_cfg
                                 config['eval_params']['mode'] = mode
                                 config['eval_params']['n_train'] = n_train
@@ -55,6 +61,7 @@ def main():
                                 config['eval_params']['optim'] = 'Adam'
                                 config['eval_params']['scheduler_type'] = 'warmup_cosine'
                                 config['eval_params']['warmup_epochs'] = 10
+                                config['eval_params']['ckpoint'] = 'last'
 
                                 config['eval_params']['train_steps'] = 200000
                                 config['eval_params']['val_steps'] = 2000

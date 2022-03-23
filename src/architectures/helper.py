@@ -36,6 +36,36 @@ arch_configs= {
             {
                 'hidden_size': 256
             }
+    },
+    'burgess_wide':{
+        'encoder_cnn':
+            [
+                ('conv', (64, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (64, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (128, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (128, 4, 2, 1)),
+                ('relu',),
+
+                ('flatten', [1]),
+            ],
+        'encoder_latent':
+            [
+                ('linear', [512]),
+                ('relu',),
+
+                ('linear', [512]),
+                ('relu',)
+            ],
+        'lstm_latent':
+            {
+                'hidden_size': 512
+            }
     }
 }
 

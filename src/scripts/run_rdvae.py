@@ -17,12 +17,13 @@ def main():
     args.filename = 'configs/discrete_vae.yaml'
     config, sklearn_eval_cfg, linear_eval_cfg = setup_experiment(args)
 
-    versions = ((1,),)
-    for data in ['dsprites90d']:
+    versions = ((3,),)
+    # for data in ['dsprites90d']:
+    for data in ['mpi3d_real']:
         for gen_type in ['random', ]:
             for version in versions[args.version_id]:
                 for seed in (2001, ):
-                    for recon_loss, beta, latent_size, dict_size in product(('mse', 'bce'), (0, 0.1, 0.5, 1,), (10, ), (256, 128)):
+                    for recon_loss, beta, latent_size, dict_size in product(('bce', ), (0, ), (10, ), (256, )):
 
                         config['model_params']['name'] = 'RecurrentDiscreteVAE'
                         config['model_params']['beta'] = beta
@@ -36,13 +37,19 @@ def main():
                         # config['exp_params']['batch_size'] = 512
 
                         config['exp_params']['dataset'] = '{}_{}_v{}'.format(data, gen_type, version)
+                        if 'mpi3d' in data:
+                            config['exp_params'][
+                                'data_path'] = '/playpen-raid2/zhenlinx/Data/disentanglement/mpi3d'
+                            config['exp_params']['max_epochs'] = 100  # 100 for dsprites and 50 for mpi3d
+                            config['model_params']['input_size'] = [3, 64, 64]
+                            config['model_params']['architecture'] = 'burgess_wide'
 
                         train_vae(config, args)
 
                         if args.sklearn:
                             # sklearn eval
-                            for mode, n_train in product(('post', ), (1000, ), ):
-                            # for mode, n_train in product(('post',  'pre', ), (1000, ), ):
+                            # for mode, n_train in product(('post', ), (10000, ), ):
+                            for mode, n_train in product(('post',  'pre', ), (1000, ), ):
                                 config['eval_params'] = sklearn_eval_cfg
                                 config['eval_params']['mode'] = mode
                                 config['eval_params']['n_train'] = n_train

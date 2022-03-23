@@ -212,6 +212,10 @@ def finetune_eval(config, args):
 
 def scikitlearn_eval(config, args):
     if (not args.test or args.finetune) and (not args.nofinetune):
+        # https://github.com/pytorch/pytorch/issues/11201
+        import torch.multiprocessing
+        torch.multiprocessing.set_sharing_strategy('file_system')
+
         seed_everything(config['exp_params']['random_seed'])
 
         """learn a task module on learned encoder"""
