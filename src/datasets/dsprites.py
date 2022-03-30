@@ -147,6 +147,7 @@ class DSprites(DisentangledDataset):
     files = {"train": "dsprite_train.npz"}
     lat_names = ('shape', 'scale', 'orientation', 'posX', 'posY')
     lat_sizes = np.array([3, 6, 40, 32, 32])
+    task_types = np.array(['cls', 'reg', 'reg', 'reg', 'reg'])
     NUM_CLASSES = list(lat_sizes)
     img_size = (1, 64, 64)
     n_gen_factors = 5

@@ -35,7 +35,7 @@ class MPI3D(Dataset):
         "realistic": 'https://storage.googleapis.com/disentanglement_dataset/Final_Dataset/mpi3d_realistic.npz',
         "real": 'https://storage.googleapis.com/disentanglement_dataset/Final_Dataset/mpi3d_real.npz'
     }
-
+    task_types = np.array(['cls', 'cls', 'cls', 'reg', 'cls', 'reg', 'reg',])
     n_gen_factors = 7
     # 'object_color', 'object_shape', 'object_size', 'camera_height', 'background_color', 'horizontal_axis', 'vertical_axis'
     lat_names = ('color', 'shape', 'size', 'height', 'bg_color', 'x-axis', 'y-axis')
@@ -59,7 +59,8 @@ class MPI3D(Dataset):
         if not os.path.exists(self.file_path):
             self.download(self.file_path)
         self.imgs = np.load(self.file_path)['images']
-        self.latent_values = np.asarray(list(product(*self.lat_values.values())), dtype=np.int8)
+        latent_values = np.asarray(list(product(*self.lat_values.values())), dtype=np.int8)
+        self.latent_values = torch.from_numpy(latent_values)
 
         if range is not None:
             self.imgs = self.imgs[range]
@@ -72,7 +73,6 @@ class MPI3D(Dataset):
         #     image_transforms.insert(0, trans.Lambda(rgb2hsv))
 
         self.transform = trans.Compose(image_transforms)
-
         self.n_samples = n_samples if n_samples is not None else len(self.imgs)
         self.raw_num_samples = len(self.imgs)
 

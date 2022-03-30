@@ -6,7 +6,7 @@ import torch
 from models.disc_vae import DiscreteVAE
 from architectures.helper import build_architectures
 from architectures.lstm_latent import LatentModuleLSTM
-from models.types_ import *
+from commons.types_ import *
 
 
 class RecurrentDiscreteVAE(DiscreteVAE):

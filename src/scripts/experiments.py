@@ -4,11 +4,13 @@ Created by zhenlinx on 03/01/2022
 """
 import os
 import sys
+import shutil
 import yaml
+
 import torch
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.callbacks import LearningRateMonitor
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
 from models import vae_models
 from datasets import get_datamodule
@@ -44,7 +46,8 @@ def train_vae(config, args):
     exp_root = os.path.join(config['logging_params']['save_dir'],
                             config['exp_params']['dataset'],
                             exp_name, f"version_{config['exp_params']['random_seed']}", 'debug' if args.debug else '')
-    ckpoint_path = os.path.join(exp_root, 'checkpoints', 'best.ckpt')
+
+    ckpoint_path = os.path.join(exp_root, 'checkpoints', 'last.ckpt')
 
     if os.path.isfile(ckpoint_path) and not args.overwrite and not args.test:
         print(f"Exp {exp_name} exsited")
@@ -54,7 +57,8 @@ def train_vae(config, args):
         dm = get_datamodule(config['exp_params']['dataset'],
                             data_dir=config['exp_params']['data_path'],
                             batch_size=config['exp_params']['batch_size'],
-                            num_workers=config['exp_params']['train_workers']
+                            num_workers=config['exp_params']['train_workers'],
+                            random_seed=config['exp_params']['random_seed']
                             )
 
         if not os.path.isdir(exp_root):
@@ -70,15 +74,25 @@ def train_vae(config, args):
         if logger is not None:
             logger.watch(vae, log="all")
         # Init ModelCheckpoint callback, monitoring 'val_loss'
-        checkpoint_callback = MyModelCheckpoint(
+        best_checkpoint_callback = MyModelCheckpoint(
             dirpath=os.path.join(exp_root, 'checkpoints'),
             monitor='val_loss',
             filename="best",
+            every_n_epochs=1,
+            verbose=False,
+            save_last=False,
+        )
+        checkpoint_callback = MyModelCheckpoint(
+            dirpath=os.path.join(exp_root, 'checkpoints'),
+            save_top_k=-1,
+            filename="{epoch:02d}",
+            every_n_epochs=50,
             verbose=False,
             save_last=True,
         )
+
         lr_monitor = LearningRateMonitor(logging_interval='epoch')
-        callbacks = [checkpoint_callback, ]
+        callbacks = [checkpoint_callback, best_checkpoint_callback]
         if not args.nowb:
             callbacks.append(lr_monitor)
 
@@ -89,6 +103,8 @@ def train_vae(config, args):
                          num_sanity_val_steps=5,
                          deterministic=True,
                          benchmark=False,
+                         # max_steps=20 if args.debug else config['exp_params']['train_steps'],
+                         # val_check_interval=20 if args.debug else config['exp_params']['val_steps'],
                          max_epochs=1 if args.debug else config['exp_params']['max_epochs'],
                          limit_train_batches=1.0,
                          callbacks=callbacks,
@@ -100,9 +116,14 @@ def train_vae(config, args):
             print(f"======= Training {exp_name} =======")
             runner.fit(vae, dm)
             print(f"Best model at {checkpoint_callback.best_model_path}")
+
+        best_model_path = checkpoint_callback.best_model_path
+        # shutil.copyfile(best_model_path, os.path.join(os.path.dirname(best_model_path), 'best.ckpt'))
+
         if config['exp_params']['max_epochs'] > 0:
             ckpt = torch.load(ckpoint_path, map_location=torch.device('cpu'))
             vae.load_state_dict(ckpt['state_dict'])
+
 
         print(f"======= Testing {exp_name} =======")
         runner.test(vae, datamodule=dm)
@@ -136,6 +157,7 @@ def finetune_eval(config, args):
                             num_workers=config['exp_params']['train_workers'],
                             n_train=config['eval_params']['n_train'],
                             virtual_n_samples=config['eval_params']['val_steps'] * config['exp_params']['batch_size'],
+                            random_seed=config['exp_params']['random_seed'],
                             )
         config['eval_params']['dataset'] = config['exp_params']['dataset']
 
@@ -241,6 +263,7 @@ def scikitlearn_eval(config, args):
                             batch_size=config['exp_params']['batch_size'],
                             num_workers=config['exp_params']['train_workers'],
                             n_train=config['eval_params']['n_train'],
+                            random_seed=config['exp_params']['random_seed'],
                             )
 
         print("Loading checkpoint at {}".format(ckpoint_path))
@@ -265,7 +288,7 @@ def scikitlearn_eval(config, args):
         ft_logger = None if args.nowb else WandbLogger(project=args.project,
                                                        name=f"{evaluator.name}_{exp_name}",
                                                        save_dir=ft_root,
-                                                       tags=[config['model_params']['name'], 'scikit_eval'] + args.tags,
+                                                       tags=[config['model_params']['name'], 'scikit_eval_v2'] + args.tags,
                                                        config=config,
                                                        reinit=True
                                                        )

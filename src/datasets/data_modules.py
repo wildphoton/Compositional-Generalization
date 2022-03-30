@@ -26,7 +26,8 @@ DATASETS_DICT = {
 
 
 class MetaDataModule(pl.LightningDataModule):
-    def __init__(self, name, data_dir, batch_size: int = 128, num_workers=4, n_train=None, virtual_n_samples=None, **dataset_config):
+    def __init__(self, name, data_dir, batch_size: int = 128, num_workers=4, n_train=None,
+                 random_seed=None, virtual_n_samples=None, **dataset_config):
         super(MetaDataModule, self).__init__()
         self.name = name
         self.data_dir = data_dir
@@ -41,11 +42,12 @@ class MetaDataModule(pl.LightningDataModule):
         self.dataset_class = DATASETS_DICT[self.class_name]
         self.num_classes = self.dataset_class.NUM_CLASSES # unique classes for each attribute
 
+        self.random_seed = random_seed
+
         self.train_ind = None
         self.test_ind = None
         self.train_dataset = None
         self.test_dataset = None
-
     def prepare_data(self) -> None:
         raise NotImplementedError()
 
@@ -178,6 +180,9 @@ class DSpritesDataModule(MetaDataModule):
                     'v1': 30000,  # 5: 1
                     'v2': 60000,  # 2: 1
                     'v3': 90000,  # 1: 1
+                    'v4': 129024,  # 3: 7
+                    'v5': 165888,  # 1: 9
+                    # 'v6': 182476,  # 1: 99
                 }
                 test_size = test_sizes[self.name.split('_')[2]]
                 # total 184K
@@ -205,7 +210,7 @@ class DSpritesDataModule(MetaDataModule):
 
         elif self.name.split('_')[0] == 'multidsprites':
             training_size = int(0.6 * MultiDsprites.NUM_SAMPLES)
-            shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.name}_shuffled_ids.npy")
+            shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.name}_shuffled_ids_seed{self.random_seed}.npy")
             if os.path.isfile(shuffled_ids_cache_path):
                 print("Load shuffled ids")
                 shuffled_ids = np.load(shuffled_ids_cache_path)
@@ -237,8 +242,6 @@ class DSpritesDataModule(MetaDataModule):
                                      )
 
 
-
-
 class MPI3DDataModule(MetaDataModule):
     """
     Supported name format : "mpi3d_{subset}_{split_mode}_v{version}"
@@ -252,15 +255,19 @@ class MPI3DDataModule(MetaDataModule):
         self.version = self.name.split('_')[3].lower()
 
         if self.mode == 'random':
-            test_sizes = {
-                'v1': 172800,  # 5: 1
-                'v2': 345600,  # 2: 1
-                'v3': 518400,  # 1: 1
+            # total size 1036800
+            test_ratio = {
+                'v1': 1/6,  # 5: 1
+                'v2': 1/3,  # 2: 1
+                'v3': 1/2,  # 1: 1
+                'v4': 7/10,  # 3: 7
+                'v5': 9/10,  # 1: 9
+                'v6': 99/100,  # 1: 99
             }
-            test_size = test_sizes[self.version]
+            test_size = int(self.dataset_class.total_sample_size * test_ratio[self.version])
 
             all_ind = list(np.arange(self.dataset_class.total_sample_size))
-            shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.name}_shuffled_ids.npy")
+            shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.name}_shuffled_ids_seed{self.random_seed}.npy")
             if os.path.isfile(shuffled_ids_cache_path):
                 print(f"Load shuffled ids at {shuffled_ids_cache_path}")
                 shuffled_ids = np.load(shuffled_ids_cache_path)

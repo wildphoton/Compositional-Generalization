@@ -66,6 +66,172 @@ arch_configs= {
             {
                 'hidden_size': 512
             }
+    },
+    'burgess_wide4x': {
+        'encoder_cnn':
+            [
+                ('conv', (128, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (128, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (256, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (256, 4, 2, 1)),
+                ('relu',),
+
+                ('flatten', [1]),
+            ],
+        'encoder_latent':
+            [
+                ('linear', [1024]),
+                ('relu',),
+
+                ('linear', [1024]),
+                ('relu',)
+            ],
+        'lstm_latent':
+            {
+                'hidden_size': 1024
+            }
+    },
+
+    'burgess_small': {
+        'encoder_cnn':
+            [
+                ('conv', (64, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (64, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (128, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (128, 4, 2, 1)),
+                ('relu',),
+
+                ('flatten', [1]),
+            ],
+        'encoder_latent':
+            [
+                ('linear', [1024]),
+                ('relu',),
+
+                ('linear', [512]),
+                ('relu',),
+
+                ('linear', [512]),
+                ('relu',)
+            ],
+        'lstm_latent':
+            {
+                'hidden_size': 512
+            }
+    },
+
+    'burgess_base': {
+        'encoder_cnn':
+            [
+                ('conv', (128, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (128, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (256, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (256, 4, 2, 1)),
+                ('relu',),
+
+                ('flatten', [1]),
+            ],
+        'encoder_latent':
+            [
+                ('linear', [2048]),
+                ('relu',),
+
+                ('linear', [2048]),
+                ('relu',),
+
+                ('linear', [1024]),
+                ('relu',)
+            ],
+        'lstm_latent':
+            {
+                'hidden_size': 1024
+            }
+    },
+
+    'burgess_base_deep': {
+        'encoder_cnn':
+            [
+                ('conv', (128, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (128, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (256, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (256, 4, 2, 1)),
+                ('relu',),
+
+                ('flatten', [1]),
+            ],
+        'encoder_latent':
+            [
+                ('linear', [1024]),
+                ('relu',),
+                ('linear', [2048]),
+                ('relu',),
+                ('linear', [2048]),
+                ('relu',),
+                ('linear', [1024]),
+                ('relu',)
+            ],
+        'lstm_latent':
+            {
+                'hidden_size': 1024
+            }
+    },
+
+    'burgess_large': {
+        'encoder_cnn':
+            [
+                ('conv', (256, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (256, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (512, 4, 2, 1)),
+                ('relu',),
+
+                ('conv', (512, 4, 2, 1)),
+                ('relu',),
+
+                ('flatten', [1]),
+            ],
+        'encoder_latent':
+            [
+                ('linear', [2048]),
+                ('relu',),
+
+                ('linear', [1024]),
+                ('relu',),
+
+                ('linear', [1024]),
+                ('relu',),
+            ],
+        'lstm_latent':
+            {
+                'hidden_size': 1024
+            }
     }
 }
 

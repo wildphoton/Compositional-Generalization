@@ -6,7 +6,7 @@ Created by zhenlinx on 03/03/2022
 """
 import torch
 import torch.nn as nn
-from architectures.stochastic import gumble_softmax, straight_through_discretize
+from .stochastic import gumble_softmax, straight_through_discretize
 
 class LatentModuleLSTM(nn.Module):
     """

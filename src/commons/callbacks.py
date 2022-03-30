@@ -16,7 +16,8 @@ class MyModelCheckpoint(ModelCheckpoint):
     #     filepath = self.format_checkpoint_name(epoch, step, ckpt_name_metrics)
     #     return filepath
 
-    def _get_metric_interpolated_filepath_name(self, monitor_candidates, trainer, del_filepath) -> str:
+    def _get_metric_interpolated_filepath_name(self, monitor_candidates, trainer, del_filepath=None) -> str:
+        # this change allows for overwriting previous checkpoints
         filepath = self.format_checkpoint_name(monitor_candidates)
 
         # version_cnt = self.STARTING_VERSION

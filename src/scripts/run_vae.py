@@ -17,38 +17,46 @@ def main():
     config, sklearn_eval_cfg, linear_eval_cfg = setup_experiment(args)
 
     # setting hyperparameters
-    versions = ((3,),)
-    # for data in ['dsprites90d']:
-    for data in ['mpi3d_real']:
+    versions = ((4,),)
+    for data in ['dsprites90d']:
+    # for data in ('mpi3d_real', ):
         for gen_type in ['random', ]:
             for version in versions[args.version_id]:
                 for seed in (2001, ):
-                    for recon_loss, beta in product(('bce', ), (0,)):
-
+                    for recon_loss, beta, arch in product(('bce', ),
+                                                          (0.1, ),
+                                                          # ('burgess', 'burgess_wide')
+                                                          ('burgess_base_deep', )
+                                                          ):
                         config['model_params']['beta'] = beta
                         config['model_params']['latent_size'] = 10
                         config['model_params']['recon_loss'] = recon_loss
+                        config['model_params']['architecture'] = arch
 
+                        config['exp_params']['max_epochs'] = None  # 100 for dsprites and 50 for mpi3d
                         config['exp_params']['random_seed'] = seed
                         config['exp_params']['dataset'] = '{}_{}_v{}'.format(data, gen_type, version)
 
                         if 'mpi3d' in data:
                             config['exp_params'][
                                 'data_path'] = '/playpen-raid2/zhenlinx/Data/disentanglement/mpi3d'
-                            config['exp_params']['max_epochs'] = 100  # 100 for dsprites and 50 for mpi3d
+                            config['exp_params']['max_epochs'] = 200  # 100 for dsprites and 50 for mpi3d
                             config['model_params']['input_size'] = [3, 64, 64]
-                            config['model_params']['architecture'] = 'burgess_wide'
 
                         train_vae(config, args)
 
                         if args.sklearn:
                             # sklearn eval
                             # for mode, n_train in product(('post', ), (1000, ), ):
-                            for mode, n_train in product(('pre', 'post'), (1000, ), ):
+                            for mode, n_train in product(('pre', 'post', 'latent'), (1000, 100), ):
                                 config['eval_params'] = sklearn_eval_cfg
                                 config['eval_params']['mode'] = mode
                                 config['eval_params']['n_train'] = n_train
-                                scikitlearn_eval(config, args)
+                                config['eval_params']['reg_model'] = 'ridge'
+                                ckpoints = ('last',  'epoch=49') if 'mpi3d' in data else ('last',)
+                                for ckpoint in ckpoints:
+                                    config['eval_params']['ckpoint'] = ckpoint
+                                    scikitlearn_eval(config, args)
                         else:
                             # eval with training a linear classifier or mlp
                             for hidden_dim, mode, n_train, sampling in product((None, ), ('latent', 'pre', 'post'), (1000, ), (False, )):

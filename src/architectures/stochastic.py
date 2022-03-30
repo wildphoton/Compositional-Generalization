@@ -2,7 +2,7 @@
 """
 Created by zhenlinx on 03/03/2022
 """
-from models.types_ import *
+from commons.types_ import *
 import torch
 from torch.nn import functional as F
 

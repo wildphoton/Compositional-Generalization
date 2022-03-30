@@ -13,7 +13,7 @@ import pytorch_lightning as pl
 from architectures.helper import build_architectures
 from evaluation.dci import DCIMetrics
 from .optimizer import init_optimizer
-from models.types_ import *
+from commons.types_ import *
 
 
 class VAE(pl.LightningModule):
@@ -123,19 +123,24 @@ class VAE(pl.LightningModule):
         :return: output dictionary
         """
         mu, log_var = torch.split(latent, self.latent_size, dim=1)
-        std = torch.exp(0.5 * log_var)
-        # prior
-        p = torch.distributions.Normal(torch.zeros_like(mu), torch.ones_like(std))
+        # std = torch.exp(0.5 * log_var)
+        std = log_var.mul(0.5).exp_() + torch.finfo(torch.float32).eps
 
+        # # prior
+        # p = torch.distributions.Normal(torch.zeros_like(mu), torch.ones_like(std))
+        #
         try:
             q = torch.distributions.Normal(mu, std) # posterior
-        except:
+        except BaseException as e:
+            print(str(e))
             print(mu, std)
+            print(std[0<=std])
+
         return {
             'mu': mu,
             'log_var': log_var,
-            'prior': p,
-            'posterior': q,
+            # 'prior': p,
+            # 'posterior': q,
             'z': q.rsample() if sampling else mu,
         }
 

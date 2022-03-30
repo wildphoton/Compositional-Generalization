@@ -15,8 +15,10 @@ from .utils import infer
 EPS = 1e-12
 
 class CompGenalizationMetrics:
-    def __init__(self, train_data, test_data, n_factors,
-                 regressor='lasso',
+    def __init__(self, train_data, test_data,
+                 n_factors,
+                 factor_selector = None,
+                 model='lasso',
                  regressoR_coeffkwargs=None,
                  **kwargs):
         kwargs.update({'cv': 5,})
@@ -24,33 +26,33 @@ class CompGenalizationMetrics:
         if regressoR_coeffkwargs is not None:
             kwargs.update(regressoR_coeffkwargs)
 
-        if regressor == 'lasso':
+        if model == 'lasso':
             if 'alphas' not in kwargs:
                 kwargs['alphas'] = [0.00005, 0.0001, 0.001,]
             if 'selection' not in kwargs:
                 kwargs['selection'] ='random'
-            regressor = LassoCV(**kwargs)
-        elif regressor == 'ridge':
+            model = LassoCV(**kwargs)
+        elif model == 'ridge':
             if 'alphas' not in kwargs:
-                kwargs['alphas'] = [0.01, 0.1, 1.0, 10]
+                kwargs['alphas'] = [0, 0.01, 0.1, 1.0, 10]
             # if 'normalize' not in kwargs:
             #     kwargs['normalize'] = True
-            regressor = RidgeCV(**kwargs)
-        elif regressor == 'logistic':
-            regressor = LogisticRegressionCV(**kwargs)
-        elif regressor == 'linear':
+            model = RidgeCV(**kwargs)
+        elif model == 'logistic':
+            model = LogisticRegressionCV(**kwargs)
+        elif model == 'linear':
             if 'cv' in kwargs:
                 del kwargs['cv']
-            regressor = LinearRegression(**kwargs)
-        elif regressor == 'random-forest':
-            regressor = RandomForestRegressor(**kwargs)
+            model = LinearRegression(**kwargs)
+        elif model == 'random-forest':
+            model = RandomForestRegressor(**kwargs)
         else:
             raise ValueError()
 
         self.train_data = train_data
         self.test_data = test_data
-        self.n_factors = n_factors
-        self.regressor = regressor
+        self.factor_indices = factor_selector if factor_selector is not None else list(range(n_factors))
+        self.regressor = model
 
     def compute_score(self, model, model_zs=None, mode='latent'):
         if model_zs is None:
@@ -61,16 +63,12 @@ class CompGenalizationMetrics:
         else:
             (train_X, train_y), (test_X, test_y) = model_zs
 
-        # train_X = (train_X - train_X.mean(axis=0))   / (train_X.std(axis=0) + EPS)
-        # test_X = (test_X - test_X.mean(axis=0))   / (test_X.std(axis=0) + EPS)
-        # train_y = (train_y - train_y.mean(axis=0)) / (train_y.std(axis=0) + EPS)
-        # test_y = (test_y - test_y.mean(axis=0)) / (test_y.std(axis=0) + EPS)
         if type(self.regressor) == LogisticRegressionCV:
             train_y = train_y.astype(int)
             test_y = test_y.astype(int)
 
         R2 = []
-        for k in range(self.n_factors):
+        for k in self.factor_indices:
             train_y_k = train_y[:, k]
             if len(np.unique(train_y_k)) > 1:
                 self.regressor.fit(train_X, train_y_k)

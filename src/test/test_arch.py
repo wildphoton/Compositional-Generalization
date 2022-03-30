@@ -2,12 +2,16 @@
 """
 Created by zhenlinx on 02/24/2022
 """
+import os
+import sys
+sys.path.append(os.path.realpath('..'))
+
 import torch
 from architectures.helper import build_architectures
 from architectures.lstm_latent import LatentModuleLSTM
 
 def test_build_cnn():
-    (encoder_cnn, decoder_cnn), (encoder_latent, decoder_latent) = build_architectures((1, 64, 64), 'burgess', 4, 'VAE')
+    (encoder_cnn, decoder_cnn), (encoder_latent, decoder_latent) = build_architectures((1, 64, 64), 'burgess_base', 10, 'VAE')
     x = torch.rand((2, 1, 64, 64))
     x = encoder_cnn(x)
     z = encoder_latent(x)

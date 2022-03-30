@@ -7,7 +7,7 @@ import sys
 sys.path.append(os.path.realpath('..'))
 import torch
 
-from models.types_ import *
+from commons.types_ import *
 
 from architectures.helper import build_architectures
 from architectures.stochastic import gumble_softmax, straight_through_discretize
