@@ -20,8 +20,8 @@ def get_gin_config(config_files, metric_name):
 def evaluate_disentanglement_metric(model, metric_names=['mig'], dataset_name='mpi3d_toy'):
     # These imports are included only inside this function for code base to run on systems without
     # proper installation of tensorflow and libcublas
-    from aicrowd import utils_pytorch
-    from aicrowd.evaluate import evaluate
+    from evaluation.aicrowd import utils_pytorch
+    from evaluation.aicrowd.evaluate import evaluate
     from disentanglement_lib.config.unsupervised_study_v1 import sweep as unsupervised_study_v1
 
     _study = unsupervised_study_v1.UnsupervisedStudyV1()
