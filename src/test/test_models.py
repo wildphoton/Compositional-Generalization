@@ -13,7 +13,7 @@ from models.rec_disc_vae import RecurrentDiscreteVAE
 from models.beta_tcvae import BetaTCVAE
 
 input_channel = 1
-architecture = 'burgess_base_deep'
+architecture = 'burgess_small_deep'
 
 def testVAE():
     model = VAE(

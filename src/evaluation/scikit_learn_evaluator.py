@@ -31,7 +31,7 @@ class ScikitLearnEvaluator:
                                                              factor_selector=self.factor_ids['cls']
                                                              )
         self.factor_names = datamodule.train_dataset.lat_names
-
+        self.checkpoint_name = kwargs['ckpoint']
 
     def eval(self):
         results = {'reg': self.regression_metric(self.backbone, mode=self.mode),
@@ -48,10 +48,11 @@ class ScikitLearnEvaluator:
 
     @property
     def name(self):
-        return '{}_{}{}_reg-{}_cls-{}'.format(
+        return '{}_{}{}_reg-{}_cls-{}_ckpt{}'.format(
             self.__class__.__name__,
             self.mode,
             f'_{self.n_train}train' if self.n_train is not None else '',
             self.model_names['reg'],
             self.model_names['cls'],
+            self.checkpoint_name,
         )

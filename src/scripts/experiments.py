@@ -58,7 +58,8 @@ def train_vae(config, args):
                             data_dir=config['exp_params']['data_path'],
                             batch_size=config['exp_params']['batch_size'],
                             num_workers=config['exp_params']['train_workers'],
-                            random_seed=config['exp_params']['random_seed']
+                            random_seed=config['exp_params']['random_seed'],
+                            virtual_n_samples=config['exp_params']['val_steps'] * config['exp_params']['batch_size'],
                             )
 
         if not os.path.isdir(exp_root):
@@ -103,9 +104,8 @@ def train_vae(config, args):
                          num_sanity_val_steps=5,
                          deterministic=True,
                          benchmark=False,
-                         # max_steps=20 if args.debug else config['exp_params']['train_steps'],
-                         # val_check_interval=20 if args.debug else config['exp_params']['val_steps'],
-                         max_epochs=1 if args.debug else config['exp_params']['max_epochs'],
+                         max_steps=20 if args.debug else config['exp_params']['train_steps'],
+                         val_check_interval=20 if args.debug else config['exp_params']['val_steps'],
                          limit_train_batches=1.0,
                          callbacks=callbacks,
                          # deterministic=True,
@@ -288,7 +288,7 @@ def scikitlearn_eval(config, args):
         ft_logger = None if args.nowb else WandbLogger(project=args.project,
                                                        name=f"{evaluator.name}_{exp_name}",
                                                        save_dir=ft_root,
-                                                       tags=[config['model_params']['name'], 'scikit_eval_v2'] + args.tags,
+                                                       tags=[config['model_params']['name'], 'scikit_eval'] + args.tags,
                                                        config=config,
                                                        reinit=True
                                                        )
@@ -297,7 +297,8 @@ def scikitlearn_eval(config, args):
             ft_logger.log_hyperparams(config)
             ft_logger.log_metrics(eval_res)
             ft_logger.experiment.finish()
-
+        else:
+            print(eval_res)
 
 def setup_experiment(args):
     config = load_yaml_file(args.filename)
@@ -346,7 +347,7 @@ def add_vae_argument(parser):
                         help='coefficiency of kl_loss term')
     parser.add_argument('--tags', '-tg', type=str, nargs='+', default=[],
                         help='tags add to experiments')
-    parser.add_argument('--project', '-pj', type=str, default='discrete_comp_gen',
+    parser.add_argument('--project', '-pj', type=str, default='discrete_comp_gen_thesis',
                         help='the name of project for W&B logger ')
     parser.add_argument('--multi', '-mt', action='store_true',
                         help='run multiDsprits exp')

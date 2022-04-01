@@ -17,16 +17,17 @@ def main():
     args.filename = 'configs/discrete_vae.yaml'
     config, sklearn_eval_cfg, linear_eval_cfg = setup_experiment(args)
 
-    versions = ((3,),)
-    # for data in ['dsprites90d']:
-    for data in ['mpi3d_real']:
+    versions = ((5, ),)
+    for data in ['dsprites90d']:
+    # for data in ['mpi3d_real']:
         for gen_type in ['random', ]:
             for version in versions[args.version_id]:
                 for seed in (2001, ):
                     for recon_loss, beta, latent_size, dict_size, arch in product(('bce', ),
-                                                                                  (0.1, ), (10, ), (256, ),
+                                                                                  (0, ), (10, ), (512, ),
                                                                                   # ('burgess', 'burgess_wide')
-                                                                                  ('burgess_wide4x', )
+                                                                                  ('base', )
+                                                                                  # ('burgess_base_deep', )
                                                                                   ):
 
                         config['model_params']['name'] = 'RecurrentDiscreteVAE'
@@ -38,8 +39,10 @@ def main():
                         config['model_params']['architecture'] = arch
 
                         config['exp_params']['random_seed'] = seed
-                        config['exp_params']['max_epochs'] = 200
+                        # config['exp_params']['max_epochs'] = 200
                         # config['exp_params']['batch_size'] = 512
+                        config['exp_params']['train_steps'] = 500000
+                        config['exp_params']['val_steps'] = 5000
 
                         config['exp_params']['dataset'] = '{}_{}_v{}'.format(data, gen_type, version)
                         if 'mpi3d' in data:
@@ -52,14 +55,14 @@ def main():
 
                         if args.sklearn:
                             # sklearn eval
-                            # for mode, n_train in product(('post', ), (10000, ), ):
-                            for mode, n_train in product(('post',  'pre', ), (1000, 100), ):
+                            # for mode, n_train in product(('latent', ), (1000, ), ):
+                            for mode, n_train in product(('post',  'pre', 'latent' ), (1000, 500, 100), ):
                                 config['eval_params'] = sklearn_eval_cfg
                                 config['eval_params']['mode'] = mode
                                 config['eval_params']['n_train'] = n_train
-                                config['eval_params']['ckpoint'] = 'last'
                                 config['eval_params']['reg_model'] = 'ridge'
-                                ckpoints = ('last',  'epoch=49') if 'mpi3d' in data else ('last',)
+                                # ckpoints = ('last',  'epoch=49') if 'mpi3d' in data else ('epoch=49',)
+                                ckpoints = ('last',)
                                 for ckpoint in ckpoints:
                                     config['eval_params']['ckpoint'] = ckpoint
                                     scikitlearn_eval(config, args)

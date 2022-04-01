@@ -48,6 +48,7 @@ class MetaDataModule(pl.LightningDataModule):
         self.test_ind = None
         self.train_dataset = None
         self.test_dataset = None
+        
     def prepare_data(self) -> None:
         raise NotImplementedError()
 
@@ -76,14 +77,13 @@ class DSpritesDataModule(MetaDataModule):
         # the name is formated as CLASSNAME_MODE_VERSION
         self.mode = self.name.split('_')[1]
         self.version = self.name.split('_')[2]
+        if self.class_name == 'dsprites':
 
-        if self.name.split('_')[0] == 'dsprites':
-
-            if self.name.split('_')[1] == 'element':
+            if self.mode == 'element':
                 range_test = [[1, ], [0, 1], np.arange(13, 26), np.arange(21, 32), np.arange(21, 32)]
-            elif self.name.split('_')[1] == 'range':
+            elif self.mode == 'range':
                 range_test = [[0, ], np.arange(6), np.arange(40), np.arange(16, 32), np.arange(32)]
-            elif self.name.split('_')[1] == 'all':
+            elif self.mode == 'all':
                 range_test = None
             else:
                 raise ValueError('Undefined splitting')
@@ -95,50 +95,50 @@ class DSpritesDataModule(MetaDataModule):
                 self.train_ind = DSprites.get_partition(range_all, range_test)
                 self.test_ind = self.train_ind
 
-        elif self.name.split('_')[0] == 'dsprites90d':
+        elif self.class_name == 'dsprites90d':
             range_all = [np.arange(3), np.arange(6), np.arange(10), np.arange(32), np.arange(32)]
-            if self.name.split('_')[1] == 'element':
-                if self.name.split('_')[2] == 'v1':
+            if self.mode == 'element':
+                if self.version == 'v1':
                     range_test = [[0, ], [0, 1], np.arange(6, 10), np.arange(21, 32), np.arange(21, 32)]
-                elif self.name.split('_')[2] == 'v2':
+                elif self.version == 'v2':
                     range_test = [[1, ], [0, 1], np.arange(6, 10), np.arange(21, 32), np.arange(21, 32)]
-                elif self.name.split('_')[2] == 'v3':
+                elif self.version == 'v3':
                     range_test = [[2, ], [0, 1], np.arange(6, 10), np.arange(21, 32), np.arange(21, 32)]
                 else:
                     raise ValueError('Undefined splitting')
 
-            elif self.name.split('_')[1] == 'multiElement':
-                if self.name.split('_')[2] == 'v1':  # train/test: 179712/4608
+            elif self.mode == 'multiElement':
+                if self.version == 'v1':  # train/test: 179712/4608
                     range_test = (
                         [[0, ], [0, 1], np.arange(1, 4), np.arange(16, 32), np.arange(16, 32)],
                         [[1, ], [2, 3], np.arange(4, 7), np.arange(0, 16), np.arange(0, 16)],
                         [[2, ], [4, 5], np.arange(7, 10), np.arange(16, 32), np.arange(0, 16)],
                     )
-                elif self.name.split('_')[2] == 'v2':  # train/test: 173568/10752
+                elif self.version == 'v2':  # train/test: 173568/10752
                     range_test = (
                         [[0, ], [0, 1, 2], np.arange(0, 5), np.arange(16, 32), np.arange(16, 32)],
                         [[1, ], [3, 4, 5], np.arange(6, 10), np.arange(0, 16), np.arange(0, 16)],
                         [[2, ], [1, 2, 3], np.arange(3, 8), np.arange(8, 24), np.arange(8, 24)],
                     )
-                elif self.name.split('_')[2] == 'v3':  # 92160/92160
+                elif self.version == 'v3':  # 92160/92160
                     range_test = (
                         [[0, ], np.arange(6), np.arange(10), np.arange(16, 32), np.arange(32)],
                         [[1, ], np.arange(6), np.arange(10), np.arange(0, 16), np.arange(32)],
                         [[2, ], np.arange(6), np.arange(10), np.arange(8, 24), np.arange(32)]
                     )
-                elif self.name.split('_')[2] == 'v4':  # 138240/46080
+                elif self.version == 'v4':  # 138240/46080
                     range_test = (
                         [[0, ], np.arange(6), np.arange(10), np.arange(16, 32), np.arange(8, 24)],
                         [[1, ], np.arange(6), np.arange(10), np.arange(0, 16), np.arange(16, 32)],
                         [[2, ], np.arange(6), np.arange(10), np.arange(8, 24), np.arange(0, 16)]
                     )
-                elif self.name.split('_')[2] == 'v5':  # 156672/27648
+                elif self.version == 'v5':  # 156672/27648
                     range_test = (
                         [[0, ], np.arange(6), np.arange(1, 4), np.arange(16, 32), np.arange(32)],
                         [[1, ], np.arange(6), np.arange(4, 7), np.arange(0, 16), np.arange(32)],
                         [[2, ], np.arange(6), np.arange(7, 10), np.arange(8, 24), np.arange(32)]
                     )
-                elif self.name.split('_')[2] == 'v6':  # 165888/18432
+                elif self.version == 'v6':  # 165888/18432
                     range_test = (
                         [[0, ], np.arange(0, 2), np.arange(1, 4), np.arange(32), np.arange(32)],
                         [[1, ], np.arange(2, 4), np.arange(4, 7), np.arange(32), np.arange(32)],
@@ -146,35 +146,33 @@ class DSpritesDataModule(MetaDataModule):
                     )
                 else:
                     raise ValueError('Undefined splitting')
-            elif self.name.split('_')[1] == 'range':
+            elif self.mode == 'range':
                 # shape + posX
-                if self.name.split('_')[2] == 'v1':
+                if self.version == 'v1':
                     range_test = [[0, ], np.arange(6), np.arange(10), np.arange(16, 32), np.arange(32)]
-                elif self.name.split('_')[2] == 'v2':
+                elif self.version == 'v2':
                     range_test = [[1, ], np.arange(6), np.arange(10), np.arange(16, 32), np.arange(32)]
-                elif self.name.split('_')[2] == 'v3':
+                elif self.version == 'v3':
                     range_test = [[2, ], np.arange(6), np.arange(10), np.arange(16, 32), np.arange(32)]
 
                 # scale + posX to check if shape has too low diversity
-                elif self.name.split('_')[2] == 'v4':
+                elif self.version == 'v4':
                     range_test = [[0, 1, 2], np.arange(0, 2), np.arange(10), np.arange(16, 32), np.arange(32)]
-                elif self.name.split('_')[2] == 'v5':
+                elif self.version == 'v5':
                     range_test = [[0, 1, 2], np.arange(2, 4), np.arange(10), np.arange(16, 32), np.arange(32)]
-                elif self.name.split('_')[2] == 'v6':
+                elif self.version == 'v6':
                     range_test = [[0, 1, 2], np.arange(4, 6), np.arange(10), np.arange(16, 32), np.arange(32)]
 
                 # orientation + posX to check if shape has too low diversity
-                elif self.name.split('_')[2] == 'v7':
+                elif self.version == 'v7':
                     range_test = [[0, 1, 2], np.arange(6), np.arange(1, 4), np.arange(16, 32), np.arange(32)]
-                elif self.name.split('_')[2] == 'v8':
+                elif self.version == 'v8':
                     range_test = [[0, 1, 2], np.arange(6), np.arange(4, 7), np.arange(16, 32), np.arange(32)]
-                elif self.name.split('_')[2] == 'v9':
+                elif self.version == 'v9':
                     range_test = [[0, 1, 2], np.arange(6), np.arange(7, 10), np.arange(16, 32), np.arange(32)]
-
-
                 else:
                     raise ValueError('Undefined version')
-            elif self.name.split('_')[1] == 'random':
+            elif self.mode == 'random':
                 # 184320 total images
                 test_sizes = {
                     'v1': 30000,  # 5: 1
@@ -182,18 +180,21 @@ class DSpritesDataModule(MetaDataModule):
                     'v3': 90000,  # 1: 1
                     'v4': 129024,  # 3: 7
                     'v5': 165888,  # 1: 9
-                    # 'v6': 182476,  # 1: 99
+                    'v6': 175104,   # 5: 95 n_train = 9216
+                    # 'v7': 182476,  # 1: 99
                 }
-                test_size = test_sizes[self.name.split('_')[2]]
+                test_size = test_sizes[self.version]
                 # total 184K
             else:
                 raise ValueError('Undefined splitting')
 
-            if self.name.split('_')[1] != 'random':
+            if self.mode != 'random':
                 self.train_ind, self.test_ind = DSprites.get_partition(range_all, range_test)
             else:
                 all_ind = DSprites.get_partition(range_all)
-                shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.name}_shuffled_ids.npy")
+                # shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.name}_shuffled_ids.npy")
+                shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.class_name}_{self.mode}_seed{self.random_seed}_shuffled_ids.npy")
+
                 if os.path.isfile(shuffled_ids_cache_path):
                     print(f"Load shuffled ids at {shuffled_ids_cache_path}")
                     shuffled_ids = np.load(shuffled_ids_cache_path)
@@ -208,7 +209,7 @@ class DSpritesDataModule(MetaDataModule):
             if self.n_train is not None:
                 self.train_ind = self.train_ind[:self.n_train]
 
-        elif self.name.split('_')[0] == 'multidsprites':
+        elif self.class_name == 'multidsprites':
             training_size = int(0.6 * MultiDsprites.NUM_SAMPLES)
             shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.name}_shuffled_ids_seed{self.random_seed}.npy")
             if os.path.isfile(shuffled_ids_cache_path):
