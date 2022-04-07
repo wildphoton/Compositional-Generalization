@@ -87,7 +87,7 @@ def train_vae(config, args):
             dirpath=os.path.join(exp_root, 'checkpoints'),
             save_top_k=-1,
             filename="{epoch:02d}",
-            every_n_epochs=50,
+            every_n_epochs=20,
             verbose=False,
             save_last=True,
         )

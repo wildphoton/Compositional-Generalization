@@ -42,6 +42,8 @@ def main():
                                 'data_path'] = '/playpen-raid2/zhenlinx/Data/disentanglement/mpi3d'
                             # config['exp_params']['max_epochs'] = 200  # 100 for dsprites and 50 for mpi3d
                             config['model_params']['input_size'] = [3, 64, 64]
+                            config['exp_params']['train_steps'] = 1000000
+                            config['exp_params']['val_steps'] = 10000
 
                         if args.sklearn:
                             # sklearn eval
