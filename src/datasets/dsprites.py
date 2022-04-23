@@ -25,52 +25,6 @@ DATASETS_DICT = {
 }
 DATASETS = list(DATASETS_DICT.keys())
 
-
-def get_dataset(dataset):
-    """Return the correct dataset."""
-    dataset = dataset.lower()
-    try:
-        # eval because stores name as string in order to put it at top of file
-        return eval(DATASETS_DICT[dataset])
-    except KeyError:
-        raise ValueError("Unkown dataset: {}".format(dataset))
-
-
-def get_img_size(dataset):
-    """Return the correct image size."""
-    return get_dataset(dataset).img_size
-
-
-def get_background(dataset):
-    """Return the image background color."""
-    return get_dataset(dataset).background_color
-
-
-def get_dataloaders(dataset, root=None, shuffle=True, pin_memory=True,
-                    batch_size=128, logger=logging.getLogger(__name__), **kwargs):
-    """A generic data loader
-
-    Parameters
-    ----------
-    dataset : {"mnist", "fashion", "dsprites", "celeba", "chairs"}
-        Name of the dataset to load
-
-    root : str
-        Path to the dataset root. If `None` uses the default one.
-
-    kwargs :
-        Additional arguments to `DataLoader`. Default values are modified.
-    """
-    pin_memory = pin_memory and torch.cuda.is_available  # only pin if GPU available
-    Dataset = get_dataset(dataset)
-    dataset = Dataset(logger=logger) if root is None else Dataset(root=root, logger=logger)
-    return DataLoader(dataset,
-                      batch_size=batch_size,
-                      shuffle=shuffle,
-                      pin_memory=pin_memory,
-                      **kwargs)
-
-
 class DisentangledDataset(Dataset, abc.ABC):
     """Base Class for disentangled VAE datasets.
 
@@ -113,6 +67,22 @@ class DisentangledDataset(Dataset, abc.ABC):
         """Download the dataset. """
         pass
 
+    def sample_factors(self, num, random_state):
+        """Sample a batch of factors Y."""
+        raise NotImplementedError()
+
+    def sample_observations_from_factors(self, factors, random_state):
+        """Sample a batch of observations X given a batch of factors Y."""
+        raise NotImplementedError()
+
+    def sample(self, num, random_state):
+        """Sample a batch of factors Y and observations X."""
+        raise NotImplementedError()
+
+    def sample_observations(self, num, random_state):
+        """Sample a batch of observations X."""
+        return self.sample(num, random_state)[1]
+
 
 class DSprites(DisentangledDataset):
     """DSprites Dataset from [1].
@@ -150,7 +120,7 @@ class DSprites(DisentangledDataset):
     task_types = np.array(['cls', 'reg', 'reg', 'reg', 'reg'])
     NUM_CLASSES = list(lat_sizes)
     img_size = (1, 64, 64)
-    n_gen_factors = 5
+    num_factors = 5
     total_sample_size = 737280
     background_color = COLOUR_BLACK
     latents_values = {'color': np.array([1.]),
@@ -302,6 +272,18 @@ class DSprites(DisentangledDataset):
                                         np.array([1, ])))
 
         return np.dot(latents, latents_bases).astype(int)
+
+    def sample(self, num, random_state):
+        indices = random_state.choice(self.raw_num_samples,
+                                      num,
+                                      replace=False if self.raw_num_samples > num else True)
+        factors = self.latents_classes[indices].numpy().astype(np.int32)
+        samples = self.imgs[indices].numpy()
+        if len(samples.shape) == 3:  # set channel dim to 1
+            samples = samples[:, None]
+        if np.issubdtype(samples.dtype, np.uint8):
+            samples = samples.astype(np.float32) / 255.
+        return factors, samples
 
     # def __len__(self):
     #     return 1000

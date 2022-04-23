@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-evaluation.evaluation_fn = @irs
+evaluation.evaluation_fn = @mcc
 evaluation.random_seed = 0
-irs.num_train=10000
-irs.batch_size=16
-discretizer.num_bins=20
-discretizer.discretizer_fn=@histogram_discretizer
+mcc.num_train=100000
+mcc.correlation_fn = "Spearman"
+mcc.batch_size=1000

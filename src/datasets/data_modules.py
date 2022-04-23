@@ -26,7 +26,7 @@ DATASETS_DICT = {
 
 
 class MetaDataModule(pl.LightningDataModule):
-    def __init__(self, name, data_dir, batch_size: int = 128, num_workers=4, n_train=None,
+    def __init__(self, name, data_dir, batch_size: int = 128, num_workers=4, n_train=None, n_fold=1,
                  random_seed=None, virtual_n_samples=None, **dataset_config):
         super(MetaDataModule, self).__init__()
         self.name = name
@@ -35,6 +35,7 @@ class MetaDataModule(pl.LightningDataModule):
         self.transform = None
         self.num_workers = num_workers
         self.n_train = n_train  # use only partial of training set
+        self.n_fold = n_fold  # the dataset will be n_fold x n_train samples
         self.virtual_n_samples = virtual_n_samples  # change the number of samples to be total training steps for prefetching purpose
         self.dataset_config = dataset_config
 
@@ -207,7 +208,7 @@ class DSpritesDataModule(MetaDataModule):
                 self.test_ind = shuffled_ids[:test_size]
 
             if self.n_train is not None:
-                self.train_ind = self.train_ind[:self.n_train]
+                self.train_ind = self.train_ind[:int(self.n_train*self.n_fold)]
 
         elif self.class_name == 'multidsprites':
             training_size = int(0.6 * MultiDsprites.NUM_SAMPLES)
@@ -263,12 +264,13 @@ class MPI3DDataModule(MetaDataModule):
                 'v3': 1/2,  # 1: 1
                 'v4': 7/10,  # 3: 7
                 'v5': 9/10,  # 1: 9
-                'v6': 99/100,  # 1: 99
+                'v6': 95/100,  # 5: 95
+                'v7': 99/100,  # 1: 99
             }
             test_size = int(self.dataset_class.total_sample_size * test_ratio[self.version])
 
             all_ind = list(np.arange(self.dataset_class.total_sample_size))
-            shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.name}_shuffled_ids_seed{self.random_seed}.npy")
+            shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.class_name}_{self.subset_name}_{self.mode}_shuffled_ids_seed{self.random_seed}.npy")
             if os.path.isfile(shuffled_ids_cache_path):
                 print(f"Load shuffled ids at {shuffled_ids_cache_path}")
                 shuffled_ids = np.load(shuffled_ids_cache_path)
@@ -281,7 +283,7 @@ class MPI3DDataModule(MetaDataModule):
             self.test_ind = shuffled_ids[:test_size]
 
         if self.n_train is not None:
-            self.train_ind = self.train_ind[:self.n_train]
+            self.train_ind = self.train_ind[:int(self.n_train*self.n_fold)]
 
     def setup(self, *args, **kwargs):
         self.train_dataset = self.dataset_class(root=self.data_dir,

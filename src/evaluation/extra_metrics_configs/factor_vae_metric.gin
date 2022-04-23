@@ -13,9 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-evaluation.evaluation_fn = @irs
+evaluation.evaluation_fn = @factor_vae_score
 evaluation.random_seed = 0
-irs.num_train=10000
-irs.batch_size=16
-discretizer.num_bins=20
-discretizer.discretizer_fn=@histogram_discretizer
+factor_vae_score.num_variance_estimate=10000
+factor_vae_score.num_train=10000
+factor_vae_score.num_eval=5000
+factor_vae_score.batch_size=64
+prune_dims.threshold = 0.05
+

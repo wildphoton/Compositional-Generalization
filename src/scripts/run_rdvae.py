@@ -17,12 +17,12 @@ def main():
     args.filename = 'configs/discrete_vae.yaml'
     config, sklearn_eval_cfg, linear_eval_cfg = setup_experiment(args)
 
-    for data in ('dsprites90d_random_v6', ):
-    # for data in ('mpi3d_real_random_v5', ):
-    #     for seed in (2001, 2002, 2003):
-        for seed in (2003,  ):
+    # for data in ('dsprites90d_random_v5', ):
+    for data in ('mpi3d_real_random_v5', ):
+        for seed in (2001, 2002, 2003):
+        # for seed in (2002, 2003):
             for recon_loss, beta, latent_size, dict_size, arch in product(('bce', ),
-                                                                          (0, ), (10, ), (256, ),
+                                                                          (0, ), (8, 12), (128, 512),
                                                                           # ('burgess', 'burgess_wide')
                                                                           ('base', )
                                                                           # ('large', )
@@ -55,13 +55,14 @@ def main():
 
                 if args.sklearn:
                     # sklearn eval
-                    # for mode, n_train in product(('latent', ), (1000, ), ):
+                    # for mode, n_train in product(('latent', ), (1000, 500, 100 ), ):
                     for mode, n_train in product(('post',  'pre', 'latent' ), (1000, 500, 100), ):
                         config['eval_params'] = sklearn_eval_cfg
                         config['eval_params']['mode'] = mode
                         config['eval_params']['n_train'] = n_train
                         config['eval_params']['reg_model'] = 'ridge'
-                        ckpoints = ('last',   )
+                        config['eval_params']['n_fold'] = 1
+                        ckpoints = ('last', )
                         # ckpoints = ('epoch=19', 'epoch=39', 'epoch=59',)
                         for ckpoint in ckpoints:
                             config['eval_params']['ckpoint'] = ckpoint

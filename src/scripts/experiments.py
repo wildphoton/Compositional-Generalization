@@ -14,7 +14,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
 from models import vae_models
 from datasets import get_datamodule
-from evaluation import ScikitLearnEvaluator, RepFineTuner
+from evaluation import ScikitLearnEvaluator, RepFineTuner, DisentangleMetricEvaluator
 from commons.callbacks import MyModelCheckpoint
 
 sys.path.append(os.path.realpath('..'))
@@ -49,7 +49,7 @@ def train_vae(config, args):
 
     ckpoint_path = os.path.join(exp_root, 'checkpoints', 'last.ckpt')
 
-    if os.path.isfile(ckpoint_path) and not args.overwrite and not args.test:
+    if os.path.isfile(ckpoint_path) and not args.overwrite and not args.test and not args.dislib:
         print(f"Exp {exp_name} exsited")
         return
 
@@ -112,13 +112,12 @@ def train_vae(config, args):
                          **config['trainer_params'],
                          )
 
-        if not args.test:
+        if not args.notrain:
             print(f"======= Training {exp_name} =======")
             runner.fit(vae, dm)
-            print(f"Best model at {checkpoint_callback.best_model_path}")
+            print(f"Best model at {best_checkpoint_callback.best_model_path}")
 
-        best_model_path = checkpoint_callback.best_model_path
-        # shutil.copyfile(best_model_path, os.path.join(os.path.dirname(best_model_path), 'best.ckpt'))
+        best_model_path = best_checkpoint_callback.best_model_path
 
         if config['exp_params']['max_epochs'] > 0:
             ckpt = torch.load(ckpoint_path, map_location=torch.device('cpu'))
@@ -126,7 +125,17 @@ def train_vae(config, args):
 
 
         print(f"======= Testing {exp_name} =======")
-        runner.test(vae, datamodule=dm)
+        if args.test:
+            runner.test(vae, datamodule=dm)
+
+        if args.dislib:
+            evaluator = DisentangleMetricEvaluator(vae, dm)
+            res = evaluator.eval()
+            if logger is not None:
+                logger.log_metrics(res)
+            else:
+                print(res)
+
         if logger is not None:
             logger.experiment.finish()
 
@@ -228,6 +237,7 @@ def finetune_eval(config, args):
             finetuner.load_state_dict(weights, strict=False)
 
         ft_trainer.test(finetuner, datamodule=dm)
+
         if ft_logger:
             ft_logger.experiment.finish()
 
@@ -235,8 +245,8 @@ def finetune_eval(config, args):
 def scikitlearn_eval(config, args):
     if (not args.test or args.finetune) and (not args.nofinetune):
         # https://github.com/pytorch/pytorch/issues/11201
-        import torch.multiprocessing
-        torch.multiprocessing.set_sharing_strategy('file_system')
+        # import torch.multiprocessing
+        # torch.multiprocessing.set_sharing_strategy('file_system')
 
         seed_everything(config['exp_params']['random_seed'])
 
@@ -261,8 +271,9 @@ def scikitlearn_eval(config, args):
         dm = get_datamodule(config['exp_params']['dataset'],
                             data_dir=config['exp_params']['data_path'],
                             batch_size=config['exp_params']['batch_size'],
-                            num_workers=config['exp_params']['train_workers'],
+                            num_workers=0,
                             n_train=config['eval_params']['n_train'],
+                            n_fold=config['eval_params']['n_fold'],
                             random_seed=config['exp_params']['random_seed'],
                             )
 
@@ -288,7 +299,7 @@ def scikitlearn_eval(config, args):
         ft_logger = None if args.nowb else WandbLogger(project=args.project,
                                                        name=f"{evaluator.name}_{exp_name}",
                                                        save_dir=ft_root,
-                                                       tags=[config['model_params']['name'], 'scikit_eval'] + args.tags,
+                                                       tags=[config['model_params']['name'], 'scikit_eval_v2'] + args.tags,
                                                        config=config,
                                                        reinit=True
                                                        )
@@ -299,6 +310,7 @@ def scikitlearn_eval(config, args):
             ft_logger.experiment.finish()
         else:
             print(eval_res)
+
 
 def setup_experiment(args):
     config = load_yaml_file(args.filename)
@@ -327,6 +339,8 @@ def add_vae_argument(parser):
                         help='debug mode')
     parser.add_argument('--test', '-t', action='store_true',
                         help='debug mode')
+    parser.add_argument('--notrain', '-ntr', action='store_true',
+                        help='do not run test')
     parser.add_argument('--finetune', '-ft', action='store_true',
                         help='finetune mode: only run finetuning on trained vae')
     parser.add_argument('--nofinetune', '-nft', action='store_true',
@@ -355,3 +369,5 @@ def add_vae_argument(parser):
                         help='do not run log on weight and bias')
     parser.add_argument('--sklearn', '-sk', action='store_true',
                         help='use scikit-learn evaluator')
+    parser.add_argument('--dislib', '-dl', action='store_true',
+                            help='test the disentanglement score with dis-lib metrics')

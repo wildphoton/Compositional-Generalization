@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-evaluation.evaluation_fn = @irs
+evaluation.evaluation_fn = @modularity_explicitness
 evaluation.random_seed = 0
-irs.num_train=10000
-irs.batch_size=16
-discretizer.num_bins=20
-discretizer.discretizer_fn=@histogram_discretizer
+modularity_explicitness.num_train=100000
+modularity_explicitness.num_test=5000
+modularity_explicitness.batch_size=1000
+discretizer.discretizer_fn = @histogram_discretizer
+discretizer.num_bins = 20

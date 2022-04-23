@@ -1,3 +1,4 @@
 mode: 'latent'
 n_train: 1000
 ckpoint: 'last'
+n_fold: 1

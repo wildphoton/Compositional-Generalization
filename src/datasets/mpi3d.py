@@ -36,7 +36,7 @@ class MPI3D(Dataset):
         "real": 'https://storage.googleapis.com/disentanglement_dataset/Final_Dataset/mpi3d_real.npz'
     }
     task_types = np.array(['cls', 'cls', 'cls', 'reg', 'cls', 'reg', 'reg',])
-    n_gen_factors = 7
+    num_factors = 7
     # 'object_color', 'object_shape', 'object_size', 'camera_height', 'background_color', 'horizontal_axis', 'vertical_axis'
     lat_names = ('color', 'shape', 'size', 'height', 'bg_color', 'x-axis', 'y-axis')
     lat_sizes = np.array([6, 6, 2, 3, 3, 40, 40])
@@ -66,9 +66,11 @@ class MPI3D(Dataset):
             self.imgs = self.imgs[range]
             self.latent_values = self.latent_values[range]
 
-        image_transforms = [trans.ToTensor(),
-                            trans.ConvertImageDtype(torch.float32),
-                            ]
+        # self.imgs = torch.from_numpy(self.imgs)
+        image_transforms = [
+            trans.ToTensor(),
+            trans.ConvertImageDtype(torch.float32),
+        ]
         # if color_mode == 'hsv':
         #     image_transforms.insert(0, trans.Lambda(rgb2hsv))
 
@@ -94,6 +96,16 @@ class MPI3D(Dataset):
         print('downloading MPI3D {}'.format(self.subset))
         request.urlretrieve(self.urls[self.subset], file_path)
         print('download complete')
+
+    def sample(self, num, random_state):
+        indices = random_state.choice(self.raw_num_samples,
+                                      num,
+                                      replace=False if self.raw_num_samples > num else True)
+        factors = self.latent_values[indices].numpy().astype(np.int32)
+        samples = self.imgs[indices]
+        if np.issubdtype(samples.dtype, np.uint8):
+            samples = samples.astype(np.float32) / 255.
+        return factors, samples
 
 
 if __name__ == '__main__':

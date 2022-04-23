@@ -140,7 +140,7 @@ def compute_dci_metrics(models, data):
     Convenience function to compute the DCI metrics for a set of models
     in a given dataset.
     """
-    n_factors = data.n_gen_factors
+    n_factors = data.num_factors
 
     loader = DataLoader(data, batch_size=64, num_workers=4, pin_memory=True)
 

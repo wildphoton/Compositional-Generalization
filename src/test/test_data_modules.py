@@ -52,7 +52,7 @@ def test_dsprites_split_comp_ratio():
         n_train = int(len(dataset)*ratio)
         print(n_train)
         train_ys = ys[:n_train]
-        for k in range(dataset.n_gen_factors):
+        for k in range(dataset.num_factors):
             lat_size = len(range_all[k])
             unique_val_k, unique_count_k = train_ys[:, k].unique(return_counts=True)
             n_unique_k = unique_val_k.shape[0]
@@ -70,7 +70,7 @@ def test_mpi3d_split_comp_ratio():
         n_train = int(len(dataset) * ratio)
         print(n_train)
         train_ys = ys[:n_train]
-        for k in range(dataset.n_gen_factors):
+        for k in range(dataset.num_factors):
             lat_size = dataset.lat_sizes[k]
             unique_val_k, unique_count_k = train_ys[:, k].unique(return_counts=True)
             n_unique_k = unique_val_k.shape[0]

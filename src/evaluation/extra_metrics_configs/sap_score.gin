@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-evaluation.evaluation_fn = @irs
+evaluation.evaluation_fn = @sap_score
 evaluation.random_seed = 0
-irs.num_train=10000
-irs.batch_size=16
-discretizer.num_bins=20
-discretizer.discretizer_fn=@histogram_discretizer
+sap_score.num_train=10000
+sap_score.num_test=5000
+sap_score.continuous_factors=False
+sap_score.batch_size=1000

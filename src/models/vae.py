@@ -129,19 +129,23 @@ class VAE(pl.LightningModule):
         # # prior
         # p = torch.distributions.Normal(torch.zeros_like(mu), torch.ones_like(std))
         #
-        try:
-            q = torch.distributions.Normal(mu, std) # posterior
-        except BaseException as e:
-            print(str(e))
-            print(mu, std)
-            print(std[0<=std])
+        # try:
+        #     q = torch.distributions.Normal(mu, std) # posterior
+        #     z = q.rsample()
+        # except BaseException as e:
+        #     # print(str(e))
+        #     # print(mu, std)
+        #     # print(std[0<=std])
+
+        eps = torch.randn_like(std)
+        z = mu.addcmul(std, eps)
 
         return {
             'mu': mu,
             'log_var': log_var,
             # 'prior': p,
             # 'posterior': q,
-            'z': q.rsample() if sampling else mu,
+            'z': z if sampling else mu,
         }
 
     def forward(self, input: Tensor, **kwargs) -> List[Tensor]:
@@ -238,7 +242,7 @@ class VAE(pl.LightningModule):
         self.log_dict({key: val.item() for key, val in metrics.items()}, prog_bar=False)
 
         dci_metric = DCIMetrics(self.trainer.datamodule.train_dataloader(),
-                   n_factors=self.trainer.datamodule.train_dataset.n_gen_factors)
+                                n_factors=self.trainer.datamodule.train_dataset.num_factors)
         dci_score = dci_metric(model=self)[2]
         self.log('dci_disGen', dci_score)
         try:
