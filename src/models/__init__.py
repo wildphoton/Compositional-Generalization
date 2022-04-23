@@ -6,9 +6,12 @@ from .vae import VAE
 from .disc_vae import DiscreteVAE
 from .rec_disc_vae import RecurrentDiscreteVAE
 from .beta_tcvae import BetaTCVAE
+from .ae import AutoEncoder
+
 vae_models = {
     'VAE': VAE,
     'DiscreteVAE': DiscreteVAE,
     'RecurrentDiscreteVAE': RecurrentDiscreteVAE,
-    'BetaTCVAE': BetaTCVAE
+    'BetaTCVAE': BetaTCVAE,
+    'AE': AutoEncoder,
     }

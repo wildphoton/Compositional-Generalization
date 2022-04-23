@@ -192,7 +192,7 @@ def build_architectures(input_size, name, latent_size, model, **kwargs):
         if model in ['VAE', 'BetaTCVAE']:
             # mu and log_variance
             encoder_latent_config += [('linear', [2 * latent_size])]
-        elif model == 'DiscreteVAE':
+        elif model == 'DiscreteVAE' or model == 'AutoEncoder':
             # latent size = number of discrete code * n_classes
             encoder_latent_config += [('linear', [latent_size])]
         # elif model == 'DiscreteVAE':
@@ -207,7 +207,7 @@ def build_architectures(input_size, name, latent_size, model, **kwargs):
             decoder_latent_config = config['encoder_config'][:]
         else:
             decoder_latent_config = encoder_latent_config[:-1]
-            if model in ['VAE', 'BetaTCVAE'] or model == 'DiscreteVAE':
+            if model in ['VAE', 'BetaTCVAE', 'AutoEncoder'] or model == 'DiscreteVAE':
                 decoder_latent_config.append(('linear', [latent_size]))
             else:
                 raise NotImplementedError(f'Not implemented for {model}')
