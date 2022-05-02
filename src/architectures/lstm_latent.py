@@ -58,22 +58,16 @@ class LatentModuleLSTM(nn.Module):
             logits: (Tensor) sequence of logits from which tokens were sampled from [B, latent_size, dictionary_size]
         """
         x = self.input_layer(x)
-        if self.fix_length:
-            raise NotImplementedError
-        else:
-            tokens_one_hot, logits, eos_id = self.encode_variable_length(x, sampling=sampling)
-            res = {
-                'z': tokens_one_hot,
-                'logits': logits,
-                'eos_id': eos_id,
-            }
+        tokens_one_hot, logits, eos_id = self.encode_variable_length(x, sampling=sampling)
+        res = {
+            'z': tokens_one_hot,
+            'logits': logits,
+            'eos_id': eos_id,
+        }
         return res
 
     def decode(self, z, eos_id=None, **kwargs):
-        if self.fix_length:
-            raise NotImplementedError
-        else:
-            output = self.decode_variable_length(z, eos_id)
+        output = self.decode_variable_length(z, eos_id)
         output = self.output_layer(output)
         return output
 
@@ -93,14 +87,15 @@ class LatentModuleLSTM(nn.Module):
         hx = torch.zeros(batch_size, self.hidden_size,
                          device=_device)
         cx = x
-
-        is_finished = torch.zeros(batch_size, device=_device).bool()
-
-        eos_ind = torch.zeros(batch_size, device=_device, dtype=torch.long)  # the index where the first eos appears
         lstm_input = torch.zeros(batch_size, self.hidden_size,
                                  device=_device)
 
-        eos_batch = self.eos_token.to(_device).repeat(batch_size, 1)
+        if not self.fix_length:
+            is_finished = torch.zeros(batch_size, device=_device).bool()
+            eos_ind = torch.zeros(batch_size, device=_device, dtype=torch.long)  # the index where the first eos appears
+            eos_batch = self.eos_token.to(_device).repeat(batch_size, 1)
+        else:
+            eos_ind = None
 
         for num in range(self.latent_size):
             hx, cx = self.encoder_lstm(lstm_input, (hx, cx))
@@ -115,21 +110,21 @@ class LatentModuleLSTM(nn.Module):
 
             z_sampled_onehot, z_argmax = straight_through_discretize(z_sampled_soft)
 
-            z_sampled_onehot[is_finished] = eos_batch[is_finished]
-            # z_one_hot = z_sampled_onehot
+            if not self.fix_length:
+                # record ending state of this step
+                z_sampled_onehot[is_finished] = eos_batch[is_finished]
+                is_finished = torch.logical_or(is_finished, z_argmax == 0)
+                not_finished = torch.logical_not(is_finished)
+                eos_ind += not_finished.long()
+
             samples.append(z_sampled_onehot)
 
             # the projected embedding of the sampled discrete code is the input for the next step
             lstm_input = self.token_to_hidden(z_sampled_onehot)
 
-            # record ending state of this step
-            is_finished = torch.logical_or(is_finished, z_argmax == 0)
-            # not_finished = (not_finished * (z_argmax != 0)).bool()
-            not_finished = torch.logical_not(is_finished)
-            eos_ind += not_finished.long()
-
         logits = torch.stack(logits).permute(1, 0, 2)
         samples = torch.stack(samples).permute(1, 0, 2)
+
         return samples, logits, eos_ind
 
 
@@ -154,15 +149,16 @@ class LatentModuleLSTM(nn.Module):
             hx, cx = self.decoder_lstm(inputs, (hx, cx))
             outputs.append(hx)
 
-        # we also feed EOS embeddings to decoder LSTM
-        eos_embeddings = self.token_to_hidden(self.eos_token.to(_device).repeat(batch_size, 1))
-        hx, cx = self.decoder_lstm(eos_embeddings, (hx, cx))
-        outputs.append(hx)
-
-        outputs = torch.stack(outputs).permute(1, 0, 2)
-
-        # select right output according to the EOS position in the latent code sequence.
-        # mask_ind = eos_ind
-        eos_ind_mask = torch.zeros(batch_size, self.latent_size + 1, 1, device=_device).scatter_(1, eos_ind.view(-1, 1, 1), 1)
-        selected_output = outputs.masked_select(eos_ind_mask.bool()).view(batch_size, -1)
-        return selected_output
+        if self.fix_length:
+            return hx
+        else:
+            # we also feed EOS embeddings to decoder LSTM
+            eos_embeddings = self.token_to_hidden(self.eos_token.to(_device).repeat(batch_size, 1))
+            hx, cx = self.decoder_lstm(eos_embeddings, (hx, cx))
+            outputs.append(hx)
+            outputs = torch.stack(outputs).permute(1, 0, 2)
+            # select right output according to the EOS position in the latent code sequence.
+            # mask_ind = eos_ind
+            eos_ind_mask = torch.zeros(batch_size, self.latent_size + 1, 1, device=_device).scatter_(1, eos_ind.view(-1, 1, 1), 1)
+            selected_output = outputs.masked_select(eos_ind_mask.bool()).view(batch_size, -1)
+            return selected_output

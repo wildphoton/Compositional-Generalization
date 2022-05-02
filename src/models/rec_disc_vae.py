@@ -12,8 +12,10 @@ from commons.types_ import *
 class RecurrentDiscreteVAE(DiscreteVAE):
     def __init__(self,
                  fix_length=False,
+                 deterministic=False,
                  **kwargs):
         self.fix_length = fix_length
+        self.deterministic = deterministic
         super(RecurrentDiscreteVAE, self).__init__(**kwargs)
 
     def setup_models(self):
@@ -31,7 +33,7 @@ class RecurrentDiscreteVAE(DiscreteVAE):
 
     def encode(self, x: Tensor, sampling) -> Dict[str, Tensor]:
         feat = self.encoder_conv(x)
-        res = self.latent_layers.encode(feat, sampling=sampling)
+        res = self.latent_layers.encode(feat, sampling=sampling and not self.deterministic)
         return res
 
     def decode(self, inputs):
@@ -75,10 +77,11 @@ class RecurrentDiscreteVAE(DiscreteVAE):
         """
         Get the name of the backbone according its parameters
         """
-        return "{}_z{}{}_D{}_gsmT{}".format(
+        return "{}_z{}{}{}_D{}_gsmT{}".format(
             self.architecture,
             self.latent_size,
-            'fix' if self.fix_length else '',
+            '_fix' if self.fix_length else '',
+            '_determ' if self.deterministic else '',
             self.dictionary_size,
             self.gsm_temperature
         )
