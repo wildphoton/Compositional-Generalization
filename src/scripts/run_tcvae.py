@@ -20,7 +20,7 @@ def main():
     # for data in ('dsprites90d_random_v5', ):
     for data in ('mpi3d_real_random_v5', ):
     #     for seed in (2001, 2002, 2003):
-        for seed in (2004, ):
+        for seed in (2002, 2004, 2005):
             for recon_loss, beta, arch in product(('bce', ), (4, ),  ('base', )):
                 config['model_params']['name'] = 'BetaTCVAE'
                 config['model_params']['beta'] = beta  # alpha=1 and gamma=1 by default
@@ -46,9 +46,8 @@ def main():
 
                 if args.sklearn:
                     # sklearn eval
-                    for mode, n_train in product(('latent', ), (100, ), ):
                     # for mode, n_train in product(('post', 'latent'), (1000, 500, 100), ):
-                    # for mode, n_train in product(('pre', 'post', 'latent'), (1000, 500, 100), ):
+                    for mode, n_train in product(('pre', 'post', 'latent'), (1000, 500, 100), ):
                         config['eval_params'] = sklearn_eval_cfg
                         config['eval_params']['mode'] = mode
                         config['eval_params']['n_train'] = n_train

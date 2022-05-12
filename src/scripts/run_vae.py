@@ -19,14 +19,14 @@ def main():
     # setting hyperparameters
     # for data in ('dsprites90d_random_v5', ):
     for data in ('mpi3d_real_random_v5', ):
-        # for seed in (2001, 2002, 2003):
-        for seed in (2003,  ):
-            for recon_loss, beta, arch in product(('bce', ),
-                                                  # (0, 0.1, 0.5, 1, 4, 8),
-                                                  # (0.5, 1, 4),
-                                                  (8, ),
-                                                  ('base', )
-                                                  ):
+        for recon_loss, beta, arch in product(('bce', ),
+                                              # (0, 0.1, 0.5, 1, 4, 8),
+                                              # (8, ),
+                                              (0.1, ),
+                                              ('base', )
+                                              ):
+            # for seed in (2001, 2002, 2003):
+            for seed in (2003,   ):
                 config['model_params']['beta'] = beta
                 config['model_params']['latent_size'] = 10
                 config['model_params']['recon_loss'] = recon_loss
@@ -49,12 +49,14 @@ def main():
 
                 if args.sklearn:
                     # sklearn eval
-                    for mode, n_train in product(('latent', ), (100, ), ):
-                    # for mode, n_train in product(('pre', 'post', 'latent'), (1000, 500, 100), ):
+                    # for mode, n_train in product(('latent', ), (100, 500), ):
+                    for mode, n_train in product(('pre', 'post', 'latent'), (1000, 500, 100), ):
                         config['eval_params'] = sklearn_eval_cfg
                         config['eval_params']['mode'] = mode
                         config['eval_params']['n_train'] = n_train
-                        config['eval_params']['reg_model'] = 'ridge'
+                        config['eval_params']['reg_model'] = 'GBTR'
+                        config['eval_params']['cls_model'] = 'GBTC'
+                        args.tags += ['scikit_eval_v2', 'GBT']
                         config['eval_params']['n_fold'] = 1
                         # config['eval_params']['reverse_task_type'] = False
                         # ckpoints = ('epoch=19', 'epoch=39', 'epoch=59',) # ('last',  'epoch=49') if 'mpi3d' in data else ('last=49',)

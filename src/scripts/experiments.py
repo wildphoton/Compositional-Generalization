@@ -299,7 +299,7 @@ def scikitlearn_eval(config, args):
         ft_logger = None if args.nowb else WandbLogger(project=args.project,
                                                        name=f"{evaluator.name}_{exp_name}",
                                                        save_dir=ft_root,
-                                                       tags=[config['model_params']['name'], 'scikit_eval_v2'] + args.tags,
+                                                       tags=[config['model_params']['name'], ] + args.tags,
                                                        config=config,
                                                        reinit=True
                                                        )

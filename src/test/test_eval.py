@@ -149,6 +149,8 @@ def testScikit_learn_evaluator():
             n_train=n_train,
             n_fold=n_fold,
             reverse_task_type=False,
+            reg_model='GBTR',
+            cls_model='GBTC',
         )
         print(evaluator.name)
         results = evaluator.eval()
@@ -197,8 +199,8 @@ def test_disentangle_score_eval():
 if __name__ == '__main__':
     # testDisentangleMetrics()
     # testCompGenalizationEval()
-    # testScikit_learn_evaluator()
-    test_disentangle_score_eval()
+    testScikit_learn_evaluator()
+    # test_disentangle_score_eval()
 
 # # {'R2_scale': array([0.50475683, 0.3401749 , 0.28559243]), 'R2_orient': array([-1.48719895, -1.2153346 , -3.07160444]), 'R2_posX': array([0.95714793, 0.94912344, 0.94077351]), 'R2_posY': array([0.95082625, 0.93245295, 0.94706246]), 'R2_mean': 0.08614772630398974, 'acc_shape': array([0.69964707, 0.70638021, 0.73080569]), 'acc_mean': 0.7122776559454191}
 # Rev {'R2_shape': 0.8572552929899554, 'R2_mean': 0.8572552929899554, 'acc_scale': 0.9227068865740741, 'acc_orient': 0.49576220100308643, 'acc_posX': 0.37700135030864196, 'acc_posY': 0.38262562692901236, 'acc_mean

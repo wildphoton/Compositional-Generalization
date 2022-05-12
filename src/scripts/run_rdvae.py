@@ -19,10 +19,11 @@ def main():
 
     # for data in ('dsprites90d_random_v5', ):
     for data in ('mpi3d_real_random_v5', ):
-        for seed in (2001, 2002, 2003):
-        # for seed in (2002, 2003):
+        # for seed in (2001, 2002, 2003):
+        for seed in (2003, ):
             for recon_loss, beta, latent_size, dict_size, arch in product(('bce', ),
-                                                                          (0, ), (8, 12), (128, 512),
+                                                                          # (0, ), (8, 12), (128, 512),
+                                                                          (0, ), (10, ), (512, ),
                                                                           # ('burgess', 'burgess_wide')
                                                                           ('base', )
                                                                           # ('large', )
@@ -34,6 +35,7 @@ def main():
                 config['model_params']['dictionary_size'] = dict_size
                 config['model_params']['recon_loss'] = recon_loss
                 config['model_params']['fix_length'] = False
+                config['model_params']['deterministic'] = False
                 config['model_params']['architecture'] = arch
 
                 config['exp_params']['random_seed'] = seed
@@ -55,12 +57,16 @@ def main():
 
                 if args.sklearn:
                     # sklearn eval
-                    # for mode, n_train in product(('latent', ), (1000, 500, 100 ), ):
-                    for mode, n_train in product(('post',  'pre', 'latent' ), (1000, 500, 100), ):
+                    # for mode, n_train in product(('post', ), (500,  ), ):
+                    for mode, n_train in product(( 'pre', 'latent' ), (1000, 500, 100), ):
+                    # for mode, n_train in product(('post',  'pre', 'latent' ), (1000, 500, 100), ):
                         config['eval_params'] = sklearn_eval_cfg
                         config['eval_params']['mode'] = mode
                         config['eval_params']['n_train'] = n_train
-                        config['eval_params']['reg_model'] = 'ridge'
+                        # config['eval_params']['reg_model'] = 'ridge'
+                        config['eval_params']['reg_model'] = 'GBTR'
+                        config['eval_params']['cls_model'] = 'GBTC'
+                        args.tags += ['scikit_eval_v2', 'GBT']
                         config['eval_params']['n_fold'] = 1
                         ckpoints = ('last', )
                         # ckpoints = ('epoch=19', 'epoch=39', 'epoch=59',)

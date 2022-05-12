@@ -9,7 +9,7 @@ import pandas as pd
 from dataclasses import dataclass
 from torch.utils.data import DataLoader
 from sklearn.linear_model import LassoCV, MultiTaskLassoCV, RidgeCV, LogisticRegressionCV, LinearRegression
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, GradientBoostingClassifier
 from .utils import infer
 
 EPS = 1e-12
@@ -22,7 +22,6 @@ class CompGenalizationMetrics:
                  model='lasso',
                  regressoR_coeffkwargs=None,
                  **kwargs):
-        kwargs.update({'cv': 5,})
 
         if regressoR_coeffkwargs is not None:
             kwargs.update(regressoR_coeffkwargs)
@@ -32,14 +31,21 @@ class CompGenalizationMetrics:
                 kwargs['alphas'] = [0.00005, 0.0001, 0.001,]
             if 'selection' not in kwargs:
                 kwargs['selection'] ='random'
+            if 'cv' not in kwargs:
+                kwargs['cv'] = 5
+            # kwargs.update({'cv': 5, })
             self.model_class = LassoCV
         elif model == 'ridge':
             if 'alphas' not in kwargs:
                 kwargs['alphas'] = [0, 0.01, 0.1, 1.0, 10]
+            if 'cv' not in kwargs:
+                kwargs['cv'] = 5
             # if 'normalize' not in kwargs:
             #     kwargs['normalize'] = True
             self.model_class = RidgeCV
         elif model == 'logistic':
+            if 'cv' not in kwargs:
+                kwargs['cv'] = 5
             self.model_class = LogisticRegressionCV
         elif model == 'linear':
             if 'cv' in kwargs:
@@ -47,6 +53,10 @@ class CompGenalizationMetrics:
             self.model_class = LinearRegression
         elif model == 'random-forest':
             self.model_class = RandomForestRegressor
+        elif model == 'GBTC':
+            self.model_class = GradientBoostingClassifier
+        elif model == 'GBTR':
+            self.model_class = GradientBoostingRegressor
         else:
             raise ValueError()
 

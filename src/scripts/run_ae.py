@@ -17,10 +17,10 @@ def main():
     config, sklearn_eval_cfg, linear_eval_cfg = setup_experiment(args)
 
     # setting hyperparameters
-    # for data in ('dsprites90d_random_v5', ):
-    for data in ('mpi3d_real_random_v5', ):
-        # for seed in (2001, 2002, 2003):
-        for seed in (2003,  ):
+    for data in ('dsprites90d_random_v5', ):
+    # for data in ('mpi3d_real_random_v5', ):
+        for seed in (2001, 2002, 2003):
+        # for seed in (2003,  ):
             for recon_loss, arch in product(('bce', ),
                                             ('base', )
                                             ):
