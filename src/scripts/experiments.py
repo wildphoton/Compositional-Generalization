@@ -14,7 +14,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
 from models import vae_models
 from datasets import get_datamodule
-from evaluation import ScikitLearnEvaluator, RepFineTuner, DisentangleMetricEvaluator
+from evaluation import ScikitLearnEvaluator, RepFineTuner, DisentangleMetricEvaluator, TopoSimEval
 from commons.callbacks import MyModelCheckpoint
 
 sys.path.append(os.path.realpath('..'))
@@ -49,7 +49,7 @@ def train_vae(config, args):
 
     ckpoint_path = os.path.join(exp_root, 'checkpoints', 'last.ckpt')
 
-    if os.path.isfile(ckpoint_path) and not args.overwrite and not args.test and not args.dislib:
+    if os.path.isfile(ckpoint_path) and not args.overwrite and not args.test and not args.compmetric:
         print(f"Exp {exp_name} exsited")
         return
 
@@ -128,8 +128,11 @@ def train_vae(config, args):
         if args.test:
             runner.test(vae, datamodule=dm)
 
-        if args.dislib:
-            evaluator = DisentangleMetricEvaluator(vae, dm)
+        if args.compmetric:
+            if 'Recurrent' in config['model_params']['name']:
+                evaluator = TopoSimEval(vae, dm)
+            else:
+                evaluator = DisentangleMetricEvaluator(vae, dm)
             res = evaluator.eval()
             if logger is not None:
                 logger.log_metrics(res)
@@ -299,7 +302,7 @@ def scikitlearn_eval(config, args):
         ft_logger = None if args.nowb else WandbLogger(project=args.project,
                                                        name=f"{evaluator.name}_{exp_name}",
                                                        save_dir=ft_root,
-                                                       tags=[config['model_params']['name'], ] + args.tags,
+                                                       tags=[config['model_params']['name'], 'scikit_eval_v2', ] + args.tags,
                                                        config=config,
                                                        reinit=True
                                                        )
@@ -369,5 +372,5 @@ def add_vae_argument(parser):
                         help='do not run log on weight and bias')
     parser.add_argument('--sklearn', '-sk', action='store_true',
                         help='use scikit-learn evaluator')
-    parser.add_argument('--dislib', '-dl', action='store_true',
+    parser.add_argument('--compmetric', '-cm', action='store_true',
                             help='test the disentanglement score with dis-lib metrics')

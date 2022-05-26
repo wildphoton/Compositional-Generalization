@@ -53,10 +53,10 @@ class MetaDataModule(pl.LightningDataModule):
     def prepare_data(self) -> None:
         raise NotImplementedError()
 
-    def train_dataloader(self):
+    def train_dataloader(self, shuffle=True):
         return DataLoader(self.train_dataset,
                           batch_size=self.batch_size,
-                          shuffle=True,
+                          shuffle=shuffle,
                           drop_last=False,
                           num_workers=self.num_workers,
                           pin_memory=True,

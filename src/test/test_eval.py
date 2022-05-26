@@ -12,6 +12,7 @@ from datasets import get_datamodule
 from evaluation import DCIMetrics
 from evaluation import CompGenalizationMetrics, ScikitLearnEvaluator
 from evaluation import DisentangleMetricEvaluator
+from evaluation import TopoSimEval
 from models import VAE, RecurrentDiscreteVAE
 
 
@@ -196,11 +197,41 @@ def test_disentangle_score_eval():
     res = disentanglemetrics.eval()
     print(res)
 
+def test_topsim_eval():
+    seed = 2002
+    seed_everything(seed)
+    model = RecurrentDiscreteVAE(
+        input_size=(1, 64, 64),
+        architecture='base',
+        latent_size=10,
+        dictionary_size=256,
+        beta=0,
+    )
+    ckpoint_path = f'/playpen-raid2/zhenlinx/Code/discrete_comp_gen/src/scripts/logs/dsprites90d_random_v5/RecurrentDiscreteVAE_base_z10_D256_gsmT1_beta0_bce_lr0.0001_adam_wd0_dsprites90d_random_v5_batch64_100epochs/version_{seed}/checkpoints/last.ckpt'
+    ckpt = torch.load(ckpoint_path, map_location=torch.device('cpu'))
+    model.load_state_dict(ckpt['state_dict'])
+    model = model.to('cuda:0')
+    dm = get_datamodule('dsprites90d_random_v5',
+                        data_dir="/playpen-raid2/zhenlinx/Data/disentanglement/dsprites",
+                        batch_size=64,
+                        num_workers=0,
+                        # n_train=1,
+                        # n_fold=n_fold,
+                        random_seed=2001,
+                        )
+    comp_metric = TopoSimEval(
+        model=model,
+        datamodule=dm
+    )
+    res = comp_metric.eval()
+    print(res)
+
 if __name__ == '__main__':
     # testDisentangleMetrics()
     # testCompGenalizationEval()
-    testScikit_learn_evaluator()
+    # testScikit_learn_evaluator()
     # test_disentangle_score_eval()
+    test_topsim_eval()
 
 # # {'R2_scale': array([0.50475683, 0.3401749 , 0.28559243]), 'R2_orient': array([-1.48719895, -1.2153346 , -3.07160444]), 'R2_posX': array([0.95714793, 0.94912344, 0.94077351]), 'R2_posY': array([0.95082625, 0.93245295, 0.94706246]), 'R2_mean': 0.08614772630398974, 'acc_shape': array([0.69964707, 0.70638021, 0.73080569]), 'acc_mean': 0.7122776559454191}
 # Rev {'R2_shape': 0.8572552929899554, 'R2_mean': 0.8572552929899554, 'acc_scale': 0.9227068865740741, 'acc_orient': 0.49576220100308643, 'acc_posX': 0.37700135030864196, 'acc_posY': 0.38262562692901236, 'acc_mean

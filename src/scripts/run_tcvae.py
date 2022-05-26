@@ -17,11 +17,16 @@ def main():
     config, sklearn_eval_cfg, linear_eval_cfg = setup_experiment(args)
 
     # setting hyperparameters
-    # for data in ('dsprites90d_random_v5', ):
-    for data in ('mpi3d_real_random_v5', ):
+    for data in ('dsprites90d_random_v5', ):
+    # for data in ('mpi3d_real_random_v6', ):
     #     for seed in (2001, 2002, 2003):
-        for seed in (2002, 2004, 2005):
-            for recon_loss, beta, arch in product(('bce', ), (4, ),  ('base', )):
+        for recon_loss, beta, arch in product(('bce', ),
+                                              (0, 0.1, 0.5, 1, 4, 8),
+                                              # (0, ),
+                                              ('base', )):
+            seeds = (2002, 2004, 2005) if beta == 4 and data == 'mpi3d_real_random_v5' else (2001, 2002, 2003)
+            # seeds = (2003, )
+            for seed in seeds:
                 config['model_params']['name'] = 'BetaTCVAE'
                 config['model_params']['beta'] = beta  # alpha=1 and gamma=1 by default
                 config['model_params']['latent_size'] = 10
@@ -51,7 +56,11 @@ def main():
                         config['eval_params'] = sklearn_eval_cfg
                         config['eval_params']['mode'] = mode
                         config['eval_params']['n_train'] = n_train
-                        config['eval_params']['reg_model'] = 'ridge'
+
+                        # config['eval_params']['reg_model'] = 'ridge'
+                        config['eval_params']['reg_model'] = 'GBTR'
+                        config['eval_params']['cls_model'] = 'GBTC'
+                        args.tags = ['GBT', ]
                         config['eval_params']['n_fold'] = 1
                         # ckpoints = ('last',  'epoch=49') if 'mpi3d' in data else ('epoch=49',)
                         ckpoints = ('last',)
