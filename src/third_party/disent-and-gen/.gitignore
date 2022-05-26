@@ -1,9 +1,0 @@
-*__pycache__*
-*/sims/*
-*.vscode*
-*.ipynb_checkpoints*
-/plots/*
-*/raw/
-*/preproc/
-*.pdf
-/data/*

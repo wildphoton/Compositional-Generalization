@@ -106,9 +106,3 @@ class MPI3D(Dataset):
         if np.issubdtype(samples.dtype, np.uint8):
             samples = samples.astype(np.float32) / 255.
         return factors, samples
-
-
-if __name__ == '__main__':
-    data = MPI3D(root='/playpen-raid2/zhenlinx/Data/disentanglement/mpi3d', subset='real')
-    img, label = data[0]
-    pass

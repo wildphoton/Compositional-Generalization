@@ -9,19 +9,11 @@ from torchvision import transforms
 import pytorch_lightning as pl
 
 from .dsprites import DSprites
-from .multi_dsprites import MultiDsprites
 from .mpi3d import MPI3D
 
 DATASETS_DICT = {
-                # "mnist": "MNIST",
-#                  "fashion": "FashionMNIST",
-                 "dsprites": DSprites,
                  "dsprites90d": DSprites,
-                 "multidsprites": MultiDsprites,
                  "mpi3d": MPI3D,
-                 # "celeba": "CelebA",
-                 # "celeba": "CelebA",
-                 # "chairs": "Chairs"
 }
 
 
@@ -78,102 +70,10 @@ class DSpritesDataModule(MetaDataModule):
         # the name is formated as CLASSNAME_MODE_VERSION
         self.mode = self.name.split('_')[1]
         self.version = self.name.split('_')[2]
-        if self.class_name == 'dsprites':
-
-            if self.mode == 'element':
-                range_test = [[1, ], [0, 1], np.arange(13, 26), np.arange(21, 32), np.arange(21, 32)]
-            elif self.mode == 'range':
-                range_test = [[0, ], np.arange(6), np.arange(40), np.arange(16, 32), np.arange(32)]
-            elif self.mode == 'all':
-                range_test = None
-            else:
-                raise ValueError('Undefined splitting')
-
-            range_all = [np.arange(3), np.arange(6), np.arange(40), np.arange(32), np.arange(32)]
-            if range_test:
-                self.train_ind, self.test_ind = DSprites.get_partition(range_all, range_test)
-            else:
-                self.train_ind = DSprites.get_partition(range_all, range_test)
-                self.test_ind = self.train_ind
-
-        elif self.class_name == 'dsprites90d':
+        if self.class_name == 'dsprites90d':
             range_all = [np.arange(3), np.arange(6), np.arange(10), np.arange(32), np.arange(32)]
-            if self.mode == 'element':
-                if self.version == 'v1':
-                    range_test = [[0, ], [0, 1], np.arange(6, 10), np.arange(21, 32), np.arange(21, 32)]
-                elif self.version == 'v2':
-                    range_test = [[1, ], [0, 1], np.arange(6, 10), np.arange(21, 32), np.arange(21, 32)]
-                elif self.version == 'v3':
-                    range_test = [[2, ], [0, 1], np.arange(6, 10), np.arange(21, 32), np.arange(21, 32)]
-                else:
-                    raise ValueError('Undefined splitting')
 
-            elif self.mode == 'multiElement':
-                if self.version == 'v1':  # train/test: 179712/4608
-                    range_test = (
-                        [[0, ], [0, 1], np.arange(1, 4), np.arange(16, 32), np.arange(16, 32)],
-                        [[1, ], [2, 3], np.arange(4, 7), np.arange(0, 16), np.arange(0, 16)],
-                        [[2, ], [4, 5], np.arange(7, 10), np.arange(16, 32), np.arange(0, 16)],
-                    )
-                elif self.version == 'v2':  # train/test: 173568/10752
-                    range_test = (
-                        [[0, ], [0, 1, 2], np.arange(0, 5), np.arange(16, 32), np.arange(16, 32)],
-                        [[1, ], [3, 4, 5], np.arange(6, 10), np.arange(0, 16), np.arange(0, 16)],
-                        [[2, ], [1, 2, 3], np.arange(3, 8), np.arange(8, 24), np.arange(8, 24)],
-                    )
-                elif self.version == 'v3':  # 92160/92160
-                    range_test = (
-                        [[0, ], np.arange(6), np.arange(10), np.arange(16, 32), np.arange(32)],
-                        [[1, ], np.arange(6), np.arange(10), np.arange(0, 16), np.arange(32)],
-                        [[2, ], np.arange(6), np.arange(10), np.arange(8, 24), np.arange(32)]
-                    )
-                elif self.version == 'v4':  # 138240/46080
-                    range_test = (
-                        [[0, ], np.arange(6), np.arange(10), np.arange(16, 32), np.arange(8, 24)],
-                        [[1, ], np.arange(6), np.arange(10), np.arange(0, 16), np.arange(16, 32)],
-                        [[2, ], np.arange(6), np.arange(10), np.arange(8, 24), np.arange(0, 16)]
-                    )
-                elif self.version == 'v5':  # 156672/27648
-                    range_test = (
-                        [[0, ], np.arange(6), np.arange(1, 4), np.arange(16, 32), np.arange(32)],
-                        [[1, ], np.arange(6), np.arange(4, 7), np.arange(0, 16), np.arange(32)],
-                        [[2, ], np.arange(6), np.arange(7, 10), np.arange(8, 24), np.arange(32)]
-                    )
-                elif self.version == 'v6':  # 165888/18432
-                    range_test = (
-                        [[0, ], np.arange(0, 2), np.arange(1, 4), np.arange(32), np.arange(32)],
-                        [[1, ], np.arange(2, 4), np.arange(4, 7), np.arange(32), np.arange(32)],
-                        [[2, ], np.arange(4, 6), np.arange(7, 10), np.arange(32), np.arange(32)]
-                    )
-                else:
-                    raise ValueError('Undefined splitting')
-            elif self.mode == 'range':
-                # shape + posX
-                if self.version == 'v1':
-                    range_test = [[0, ], np.arange(6), np.arange(10), np.arange(16, 32), np.arange(32)]
-                elif self.version == 'v2':
-                    range_test = [[1, ], np.arange(6), np.arange(10), np.arange(16, 32), np.arange(32)]
-                elif self.version == 'v3':
-                    range_test = [[2, ], np.arange(6), np.arange(10), np.arange(16, 32), np.arange(32)]
-
-                # scale + posX to check if shape has too low diversity
-                elif self.version == 'v4':
-                    range_test = [[0, 1, 2], np.arange(0, 2), np.arange(10), np.arange(16, 32), np.arange(32)]
-                elif self.version == 'v5':
-                    range_test = [[0, 1, 2], np.arange(2, 4), np.arange(10), np.arange(16, 32), np.arange(32)]
-                elif self.version == 'v6':
-                    range_test = [[0, 1, 2], np.arange(4, 6), np.arange(10), np.arange(16, 32), np.arange(32)]
-
-                # orientation + posX to check if shape has too low diversity
-                elif self.version == 'v7':
-                    range_test = [[0, 1, 2], np.arange(6), np.arange(1, 4), np.arange(16, 32), np.arange(32)]
-                elif self.version == 'v8':
-                    range_test = [[0, 1, 2], np.arange(6), np.arange(4, 7), np.arange(16, 32), np.arange(32)]
-                elif self.version == 'v9':
-                    range_test = [[0, 1, 2], np.arange(6), np.arange(7, 10), np.arange(16, 32), np.arange(32)]
-                else:
-                    raise ValueError('Undefined version')
-            elif self.mode == 'random':
+            if self.mode == 'random':
                 # 184320 total images
                 test_sizes = {
                     'v1': 30000,  # 5: 1
@@ -182,16 +82,10 @@ class DSpritesDataModule(MetaDataModule):
                     'v4': 129024,  # 3: 7
                     'v5': 165888,  # 1: 9
                     'v6': 175104,   # 5: 95 n_train = 9216
-                    # 'v7': 182476,  # 1: 99
                 }
                 test_size = test_sizes[self.version]
                 # total 184K
-            else:
-                raise ValueError('Undefined splitting')
 
-            if self.mode != 'random':
-                self.train_ind, self.test_ind = DSprites.get_partition(range_all, range_test)
-            else:
                 all_ind = DSprites.get_partition(range_all)
                 # shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.name}_shuffled_ids.npy")
                 shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.class_name}_{self.mode}_seed{self.random_seed}_shuffled_ids.npy")
@@ -206,26 +100,11 @@ class DSpritesDataModule(MetaDataModule):
 
                 self.train_ind = shuffled_ids[test_size:]
                 self.test_ind = shuffled_ids[:test_size]
+            else:
+                raise ValueError('Undefined splitting')
 
             if self.n_train is not None:
                 self.train_ind = self.train_ind[:int(self.n_train*self.n_fold)]
-
-        elif self.class_name == 'multidsprites':
-            training_size = int(0.6 * MultiDsprites.NUM_SAMPLES)
-            shuffled_ids_cache_path = os.path.join(self.data_dir, f"{self.name}_shuffled_ids_seed{self.random_seed}.npy")
-            if os.path.isfile(shuffled_ids_cache_path):
-                print("Load shuffled ids")
-                shuffled_ids = np.load(shuffled_ids_cache_path)
-            else:
-                shuffled_ids = np.random.permutation(int(MultiDsprites.NUM_SAMPLES))
-                print("Save shuffled ids")
-                np.save(shuffled_ids_cache_path, shuffled_ids)
-            self.train_ind = shuffled_ids[:training_size]
-            self.test_ind = shuffled_ids[training_size:]
-
-            # for only use part of training set
-            if self.n_train is not None:
-                self.train_ind = self.train_ind[:self.n_train]
         else:
             raise ValueError('Undefined dataset type')
 

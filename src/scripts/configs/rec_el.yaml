@@ -1,0 +1,43 @@
+model_params:
+  name: 'RecurrentEL'
+  input_size: [1, 64, 64]
+  architecture: 'burgess'
+  latent_size: 10
+  dictionary_size: 128
+  beta: 0.0
+  lr: 0.0001
+  recon_loss: 'mse'
+
+exp_params:
+  dataset: dsprites90d_random_v1
+  data_path: "/playpen-raid2/zhenlinx/Data/disentanglement/dsprites"
+  train_workers: 4
+  val_workers: 1
+  random_seed: 1266
+  max_epochs: 100
+  batch_size: 64 # Better to have a square number
+
+
+#finetune_params:
+#  hidden_dim:
+#  learning_rate: 0.001
+#  weight_decay: 1.e-6
+#  nesterov: True
+#  scheduler_type: 'warmup_cosine'
+#  warmup_epochs: 20
+#  gamma: 0.1
+#  final_lr: 0
+#  n_train: 1000
+#  train_steps: 10000000
+#  val_steps: 10000
+#  optim: 'SGD'
+
+#eval_params:
+#  mode: 'latent'
+#  n_train: 1000
+
+trainer_params:
+  gpus: [0, ]
+
+logging_params:
+  save_dir: "logs/"

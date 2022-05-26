@@ -37,66 +37,6 @@ arch_configs= {
                 'hidden_size': 256
             }
     },
-    'burgess_wide':{
-        'encoder_cnn':
-            [
-                ('conv', (64, 4, 2, 1)),
-                ('relu',),
-
-                ('conv', (64, 4, 2, 1)),
-                ('relu',),
-
-                ('conv', (128, 4, 2, 1)),
-                ('relu',),
-
-                ('conv', (128, 4, 2, 1)),
-                ('relu',),
-
-                ('flatten', [1]),
-            ],
-        'encoder_latent':
-            [
-                ('linear', [512]),
-                ('relu',),
-
-                ('linear', [512]),
-                ('relu',)
-            ],
-        'lstm_latent':
-            {
-                'hidden_size': 512
-            }
-    },
-    'burgess_wide4x': {
-        'encoder_cnn':
-            [
-                ('conv', (128, 4, 2, 1)),
-                ('relu',),
-
-                ('conv', (128, 4, 2, 1)),
-                ('relu',),
-
-                ('conv', (256, 4, 2, 1)),
-                ('relu',),
-
-                ('conv', (256, 4, 2, 1)),
-                ('relu',),
-
-                ('flatten', [1]),
-            ],
-        'encoder_latent':
-            [
-                ('linear', [1024]),
-                ('relu',),
-
-                ('linear', [1024]),
-                ('relu',)
-            ],
-        'lstm_latent':
-            {
-                'hidden_size': 1024
-            }
-    },
 
     'base': {
         'encoder_cnn':
@@ -192,12 +132,9 @@ def build_architectures(input_size, name, latent_size, model, **kwargs):
         if model in ['VAE', 'BetaTCVAE']:
             # mu and log_variance
             encoder_latent_config += [('linear', [2 * latent_size])]
-        elif model == 'DiscreteVAE' or model == 'AutoEncoder':
+        elif model == 'AutoEncoder':
             # latent size = number of discrete code * n_classes
             encoder_latent_config += [('linear', [latent_size])]
-        # elif model == 'DiscreteVAE':
-        #     # latent size = number of discrete code * n_classes
-        #     encoder_latent_config = encoder_latent_config[0]
         else:
             raise NotImplementedError('Not implemented for {}'.format(model))
 
@@ -207,7 +144,7 @@ def build_architectures(input_size, name, latent_size, model, **kwargs):
             decoder_latent_config = config['encoder_config'][:]
         else:
             decoder_latent_config = encoder_latent_config[:-1]
-            if model in ['VAE', 'BetaTCVAE', 'AutoEncoder'] or model == 'DiscreteVAE':
+            if model in ['VAE', 'BetaTCVAE', 'AutoEncoder']:
                 decoder_latent_config.append(('linear', [latent_size]))
             else:
                 raise NotImplementedError(f'Not implemented for {model}')

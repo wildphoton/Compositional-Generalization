@@ -14,7 +14,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 
 from models import vae_models
 from datasets import get_datamodule
-from evaluation import ScikitLearnEvaluator, RepFineTuner, DisentangleMetricEvaluator, TopoSimEval
+from evaluation import ScikitLearnEvaluator, DisentangleMetricEvaluator, TopoSimEval
 from commons.callbacks import MyModelCheckpoint
 
 sys.path.append(os.path.realpath('..'))
@@ -143,108 +143,6 @@ def train_vae(config, args):
             logger.experiment.finish()
 
 
-def finetune_eval(config, args):
-    if (not args.test or args.finetune) and (not args.nofinetune):
-        seed_everything(config['exp_params']['random_seed'])
-
-        """learn a task module on learned encoder"""
-        vae = vae_models[config['model_params']['name']](
-            **config['model_params'],
-        )
-
-        exp_name = vae.name + '_{}_batch{}_{}epochs'.format(
-            config['exp_params']['dataset'],
-            config['exp_params']['batch_size'],
-            config['exp_params']['max_epochs'],
-        )
-
-        exp_root = os.path.join(config['logging_params']['save_dir'],
-                                config['exp_params']['dataset'],
-                                exp_name, f"version_{config['exp_params']['random_seed']}")
-        ckpoint_path = os.path.join(exp_root, 'checkpoints', f"{config['eval_params']['ckpoint']}.ckpt")
-
-        dm = get_datamodule(config['exp_params']['dataset'],
-                            data_dir=config['exp_params']['data_path'],
-                            batch_size=config['exp_params']['batch_size'],
-                            num_workers=config['exp_params']['train_workers'],
-                            n_train=config['eval_params']['n_train'],
-                            virtual_n_samples=config['eval_params']['val_steps'] * config['exp_params']['batch_size'],
-                            random_seed=config['exp_params']['random_seed'],
-                            )
-        config['eval_params']['dataset'] = config['exp_params']['dataset']
-
-        if config['exp_params']['max_epochs'] > 0:
-            print("Loading checkpoint at {}".format(ckpoint_path))
-            ckpt = torch.load(ckpoint_path, map_location=torch.device('cpu'))
-            vae.load_state_dict(ckpt['state_dict'])
-            print("Checkpoint loaded!")
-
-        # setup evaluation
-        finetuner = RepFineTuner(
-            vae,
-            num_classes=dm.num_classes,
-            factor_names=dm.dataset_class.lat_names,
-            **config['eval_params'],
-        )
-        print(f"======= {finetuner.name} with {exp_name}  =======")
-
-        ft_root = os.path.join(exp_root, finetuner.name,
-                               f"version_{config['exp_params']['random_seed']}")
-        ft_ckpt_path = os.path.join(ft_root, 'checkpoints', 'best.ckpt')
-
-        if not os.path.isdir(ft_root):
-            os.makedirs(ft_root, exist_ok=True)
-
-        ft_logger = None if args.nowb else WandbLogger(project=args.project,
-                                                       name=f"{finetuner.name}_{exp_name}",
-                                                       save_dir=ft_root,
-                                                       tags=[config['model_params']['name'], 'finetune'] + args.tags,
-                                                       config=config,
-                                                       reinit=True
-                                                       )
-        if ft_logger is not None:
-            ft_logger.watch(finetuner, log="all")
-        ft_checkpoint_callback = MyModelCheckpoint(
-            dirpath=os.path.join(ft_root, 'checkpoints'),
-            monitor='val_loss',
-            filename="best",
-            verbose=False,
-            save_last=True,
-        )
-        # early_stopping = EarlyStopping('val_loss', patience=50, mode='min')
-        lr_monitor = LearningRateMonitor(logging_interval='step')
-        callbacks = [ft_checkpoint_callback, ]
-        if not args.nowb:
-            callbacks.append(lr_monitor)
-
-        ft_trainer = Trainer(
-            fast_dev_run=10 if args.debug else False,
-            log_every_n_steps=100,
-            num_sanity_val_steps=5,
-            deterministic=True,
-            benchmark=False,
-            logger=ft_logger,
-            callbacks=callbacks,
-            max_steps=config['eval_params']['train_steps'],
-            val_check_interval=config['eval_params']['val_steps'],
-            # max_epochs=1 if args.debug else config['finetune_params']['epochs'],
-            **config['trainer_params']
-        )
-        if not args.test:
-            ft_trainer.fit(finetuner, dm)
-
-        if config['eval_params']['train_steps'] > 0:
-            ft_ckpt = torch.load(ft_ckpt_path, map_location=torch.device('cpu'))
-            weights = {k.replace('linear_layer', 'task_head'): v for k, v in ft_ckpt['state_dict'].items() if
-                       'backbone' not in k and 'latent' not in k}
-            finetuner.load_state_dict(weights, strict=False)
-
-        ft_trainer.test(finetuner, datamodule=dm)
-
-        if ft_logger:
-            ft_logger.experiment.finish()
-
-
 def scikitlearn_eval(config, args):
     if (not args.test or args.finetune) and (not args.nofinetune):
         # https://github.com/pytorch/pytorch/issues/11201
@@ -318,9 +216,6 @@ def scikitlearn_eval(config, args):
 def setup_experiment(args):
     config = load_yaml_file(args.filename)
 
-    linear_eval_config_file = 'configs/linear_eval.yaml'
-    linear_eval_cfg = load_yaml_file(linear_eval_config_file)
-
     sklearn_eval_config_file = 'configs/scikitlearn_eval.yaml'
     sklearn_eval_cfg = load_yaml_file(sklearn_eval_config_file)
 
@@ -330,7 +225,7 @@ def setup_experiment(args):
     config['trainer_params']['gpus'] = args.gpu
     os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'  # Deterministic behavior of torch.addmm. Please refer to https://docs.nvidia.com/cuda/cublas/index.html#cublasApi_reproducibility
     print(config['trainer_params']['gpus'])
-    return config, sklearn_eval_cfg, linear_eval_cfg
+    return config, sklearn_eval_cfg
 
 def add_vae_argument(parser):
     parser.add_argument('--config', '-c',

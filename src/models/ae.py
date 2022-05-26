@@ -9,7 +9,6 @@ import torchvision.utils as vutils
 import pytorch_lightning as pl
 
 from architectures.helper import build_architectures
-from evaluation.dci import DCIMetrics
 from .optimizer import init_optimizer
 from commons.types_ import *
 
@@ -168,10 +167,6 @@ class AutoEncoder(pl.LightningModule):
                 metrics['{}'.format(key)] = torch.stack([x[key] for x in outputs]).mean()
         self.log_dict({key: val.item() for key, val in metrics.items()}, prog_bar=False)
 
-        dci_metric = DCIMetrics(self.trainer.datamodule.train_dataloader(),
-                                n_factors=self.trainer.datamodule.train_dataset.num_factors)
-        dci_score = dci_metric(model=self)[2]
-        self.log('dci_disGen', dci_score)
         try:
             hparams_log = {}
             for key, val in self.hparams.items():

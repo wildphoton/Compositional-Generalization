@@ -1,5 +1,0 @@
-curl
-gcc
-git
-vim
-ssh
