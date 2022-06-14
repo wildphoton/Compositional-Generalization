@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 04/06/2021
-"""
 
 from torchmetrics import Metric
 import torch.nn as nn

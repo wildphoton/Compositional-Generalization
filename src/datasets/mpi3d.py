@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 03/20/2022
-"""
+
 import os
 import numpy as np
 from urllib import request

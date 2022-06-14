@@ -1,14 +1,11 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 02/25/2022
-"""
 
 from evaluation import CompGenalizationMetrics
 from .utils import infer
 
 class ScikitLearnEvaluator:
     def __init__(self, backbone, datamodule, mode,
-                 n_train=None, n_fold=1, reg_model='linear', cls_model='logistic', reverse_task_type=False,
+                 n_train=None, n_fold=1, reg_model='ridge', cls_model='logistic', reverse_task_type=False,
                  ckpoint='', **kwargs):
         """
 

@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 04/13/2021
-"""
 
 def merge_params(dictionary):
     """

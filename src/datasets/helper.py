@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 03/02/2021
-"""
+
 import os
 import numpy as np
 from torchvision import transforms

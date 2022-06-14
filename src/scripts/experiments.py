@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 03/01/2022
-"""
+
 import os
 import sys
 import shutil
@@ -249,14 +247,6 @@ def add_vae_argument(parser):
                         help='overwrite existing checkpoint otherwise skip training')
     parser.add_argument('--gpu', '-g', type=int, nargs='+',
                         help='gpu ids')
-    parser.add_argument('--version_id', '-v', type=int, default=0,
-                        help='running versions')
-    parser.add_argument('--hidden_dim', '-hd', type=int,
-                        help='hidden dim for finetuner')
-    parser.add_argument('--latent_dim', '-ld', type=int,
-                        help='latent dim of vae (length of discrete codes)')
-    parser.add_argument('--beta', '-bt', type=float, default=1.0,
-                        help='coefficiency of kl_loss term')
     parser.add_argument('--tags', '-tg', type=str, nargs='+', default=[],
                         help='tags add to experiments')
     parser.add_argument('--project', '-pj', type=str, default='discrete_comp_gen_thesis',
@@ -267,5 +257,7 @@ def add_vae_argument(parser):
                         help='do not run log on weight and bias')
     parser.add_argument('--sklearn', '-sk', action='store_true',
                         help='use scikit-learn evaluator')
+    parser.add_argument('--gbt', '-gbt', action='store_true',
+                        help='use gbt readout models, otherwise use linear models')
     parser.add_argument('--compmetric', '-cm', action='store_true',
                             help='test the disentanglement score with dis-lib metrics')

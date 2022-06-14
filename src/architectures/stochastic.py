@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 03/03/2022
-"""
+
 from commons.types_ import *
 import torch
 from torch.nn import functional as F

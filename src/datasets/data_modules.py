@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 05/11/2021
-"""
+
 import os
 import numpy as np
 from torch.utils.data import Dataset, DataLoader

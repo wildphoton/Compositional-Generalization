@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 10/22/2020
-"""
+
 # sys.path.append(os.path.realpath('..'))
 from math import sqrt
 import torch

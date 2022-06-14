@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 03/03/2022
-"""
+
 import torch
 from models.vae import VAE
 from architectures.helper import build_architectures

@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 """
-Created by zhenlinx on 05/12/2022
-
 Measuring the topographical similarity
 
 Referred the implementation at

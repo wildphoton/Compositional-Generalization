@@ -1,9 +1,6 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 02/25/2022
-"""
+
 import torch
-from tqdm import tqdm
 from copy import deepcopy
 
 def infer(model, dataloader, mode):

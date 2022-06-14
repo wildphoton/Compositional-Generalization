@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 02/24/2022
-"""
+
 import torch
 from torch import nn
 from architectures.feedforward import FeedForward, transpose_layer_defs

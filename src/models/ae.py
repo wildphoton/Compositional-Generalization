@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 04/23/2022
-"""
+
 from math import sqrt
 import torch
 from torch.nn import functional as F

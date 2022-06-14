@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 """
-Created by zhenlinx on 03/12/2022
-
 Beta Total Correlation VAE
 """
 import os

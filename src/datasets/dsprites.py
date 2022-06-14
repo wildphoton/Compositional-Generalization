@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """
 Copied from https://github.com/YannDubs/disentangling-vae/blob/master/utils/datasets.py
-Created by zhenlinx on 02/24/2021
 """
 import abc
 import logging

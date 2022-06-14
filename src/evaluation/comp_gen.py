@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 02/25/2022
-"""
+
 import numpy as np
 import torch
 import torch.nn as nn

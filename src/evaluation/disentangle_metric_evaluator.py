@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 04/15/2022
-"""
 
 import sys
 import os

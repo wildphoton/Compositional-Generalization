@@ -1,20 +1,20 @@
 model_params:
   name: 'VAE'
   input_size: [1, 64, 64]
-  architecture: 'burgess'
+  architecture: 'base'
   latent_size: 10
   beta: 0.0
   lr: 0.0001
-  recon_loss: 'mse'
+  recon_loss: 'bce'
 
 exp_params:
-  dataset: dsprites90d_random_v1
-  data_path: "/playpen-raid2/zhenlinx/Data/disentanglement/dsprites"
+  dataset: dsprites90d_random_v5
+  data_path: "YourPathToData"
   train_workers: 4
   val_workers: 1
-  random_seed: 1266
-  max_epochs: 100
+  random_seed: 2001
   batch_size: 64 # Better to have a square number
+  max_epochs: 100
 
 trainer_params:
   gpus: [0, ]

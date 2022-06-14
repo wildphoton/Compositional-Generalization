@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Created by zhenlinx on 04/13/2021
-"""
+
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 class MyModelCheckpoint(ModelCheckpoint):
