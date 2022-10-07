@@ -15,11 +15,11 @@ def main():
     args.filename = 'configs/rec_el.yaml'
     config, sklearn_eval_cfg = setup_experiment(args)
 
-    # for data in ('dsprites90d_random_v5', ):
-    for data in ('mpi3d_real_random_v6', ):
+    for data in ('dsprites90d_random_v5', ):
+    # for data in ('mpi3d_real_random_v5', ):
         for recon_loss, beta, latent_size, dict_size, arch in product(('bce', ),
                                                                       # (0, ), (8, 10, 12), (128, 256, 512),
-                                                                      (0, ), (10, ), (512, 256),
+                                                                      (0, ), (10, ), (512, ),
                                                                       # ('burgess', 'burgess_wide')
                                                                       ('base', )
                                                                       # ('large', )
@@ -32,18 +32,19 @@ def main():
                 config['model_params']['recon_loss'] = recon_loss
                 config['model_params']['architecture'] = arch
 
-                config['model_params']['fix_length'] = False  # using fix length message
-                config['model_params']['deterministic'] = False # using greedy sampling
+                config['model_params']['fix_length'] = False   # using fix length message
+                config['model_params']['deterministic'] = False  # using greedy sampling
 
                 config['exp_params']['random_seed'] = seed
                 config['exp_params']['train_steps'] = 500000
                 config['exp_params']['val_steps'] = 5000
-
                 config['exp_params']['dataset'] = data
+                config['exp_params'][
+                    'data_path'] = 'YOUR_PATH_TO_DATA'
+
                 if 'mpi3d' in data:
                     config['exp_params'][
-                        'data_path'] = 'YourPathToData'
-                    # config['exp_params']['max_epochs'] = 200  # 100 for dsprites and 50 for mpi3d
+                        'data_path'] = 'YOUR_PATH_TO_DATA'
                     config['model_params']['input_size'] = [3, 64, 64]
                     config['exp_params']['train_steps'] = 1000000
                     config['exp_params']['val_steps'] = 10000
@@ -52,10 +53,12 @@ def main():
 
                 if args.sklearn:
                     # sklearn eval
-                    for mode, n_train in product(('pre', 'post', 'latent'), (1000, 500, 100), ):
+                    # for mode, n_train in product(('pre', 'post', 'latent'), (1000, 500, 100), ):
+                    for mode, n_train in product(('pre', 'post', 'latent'), (500, ), ):
                         config['eval_params'] = sklearn_eval_cfg
                         config['eval_params']['mode'] = mode
                         config['eval_params']['n_train'] = n_train
+                        # config['eval_params']['testOnTrain'] = True
 
                         if args.gbt:
                             config['eval_params']['reg_model'] = 'GBTR'

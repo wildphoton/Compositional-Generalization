@@ -29,7 +29,6 @@ def main():
                 config['model_params']['architecture'] = arch
 
                 config['exp_params']['random_seed'] = seed
-                # config['exp_params']['max_epochs'] = 100
                 config['exp_params']['train_steps'] = 500000
                 config['exp_params']['val_steps'] = 5000
                 config['exp_params']['dataset'] = data
@@ -37,7 +36,6 @@ def main():
                 if 'mpi3d' in data:
                     config['exp_params'][
                         'data_path'] = 'YourPathToData'
-                    # config['exp_params']['max_epochs'] = 200  # 100 for dsprites and 50 for mpi3d
                     config['model_params']['input_size'] = [3, 64, 64]
                     config['exp_params']['train_steps'] = 1000000
                     config['exp_params']['val_steps'] = 10000
@@ -50,6 +48,7 @@ def main():
                         config['eval_params'] = sklearn_eval_cfg
                         config['eval_params']['mode'] = mode
                         config['eval_params']['n_train'] = n_train
+                        config['eval_params']['testOnTrain'] = True
 
                         if args.gbt:
                             config['eval_params']['reg_model'] = 'GBTR'

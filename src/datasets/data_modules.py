@@ -17,7 +17,7 @@ DATASETS_DICT = {
 
 class MetaDataModule(pl.LightningDataModule):
     def __init__(self, name, data_dir, batch_size: int = 128, num_workers=4, n_train=None, n_fold=1,
-                 random_seed=None, virtual_n_samples=None, **dataset_config):
+                 random_seed=None, virtual_n_samples=None, in_distribution_test=False, **dataset_config):
         super(MetaDataModule, self).__init__()
         self.name = name
         self.data_dir = data_dir
@@ -27,6 +27,7 @@ class MetaDataModule(pl.LightningDataModule):
         self.n_train = n_train  # use only partial of training set
         self.n_fold = n_fold  # the dataset will be n_fold x n_train samples
         self.virtual_n_samples = virtual_n_samples  # change the number of samples to be total training steps for prefetching purpose
+        self.in_distribution_test = in_distribution_test  # use the full train_set (ignore n_train) for testing
         self.dataset_config = dataset_config
 
         self.class_name = self.name.split('_')[0]
@@ -97,7 +98,10 @@ class DSpritesDataModule(MetaDataModule):
                     np.save(shuffled_ids_cache_path, shuffled_ids)
 
                 self.train_ind = shuffled_ids[test_size:]
-                self.test_ind = shuffled_ids[:test_size]
+                if self.in_distribution_test:
+                    self.test_ind = shuffled_ids[test_size:]
+                else:
+                    self.test_ind = shuffled_ids[:test_size]
             else:
                 raise ValueError('Undefined splitting')
 
@@ -157,7 +161,10 @@ class MPI3DDataModule(MetaDataModule):
                 np.save(shuffled_ids_cache_path, shuffled_ids)
 
             self.train_ind = shuffled_ids[test_size:]
-            self.test_ind = shuffled_ids[:test_size]
+            if self.in_distribution_test:
+                self.test_ind = shuffled_ids[test_size:]
+            else:
+                self.test_ind = shuffled_ids[:test_size]
 
         if self.n_train is not None:
             self.train_ind = self.train_ind[:int(self.n_train*self.n_fold)]

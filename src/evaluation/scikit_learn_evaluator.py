@@ -6,7 +6,7 @@ from .utils import infer
 class ScikitLearnEvaluator:
     def __init__(self, backbone, datamodule, mode,
                  n_train=None, n_fold=1, reg_model='ridge', cls_model='logistic', reverse_task_type=False,
-                 ckpoint='', **kwargs):
+                 ckpoint='', testOnTrain=False, inDist=False, **kwargs):
         """
 
         :param backbone:
@@ -57,12 +57,17 @@ class ScikitLearnEvaluator:
 
         self.factor_names = datamodule.train_dataset.lat_names
         self.checkpoint_name = ckpoint
+        self.testOnTrain = testOnTrain
+        self.testInDist = inDist and not testOnTrain
 
     def eval(self):
         train_X, train_y = infer(self.backbone, self.train_data, self.mode)
         train_X, train_y = train_X.numpy(), train_y.numpy()
         test_X, test_y = infer(self.backbone, self.test_data, self.mode)
         test_X, test_y = test_X.numpy(), test_y.numpy()
+
+        if self.testOnTrain:
+            test_X, test_y = train_X, train_y
 
         results = {'reg': self.regression_metric(model_zs=((train_X, train_y), (test_X, test_y)), mode=self.mode),
                    'cls': self.classification_metric(model_zs=((train_X, train_y), (test_X, test_y)), mode=self.mode)}
@@ -77,13 +82,15 @@ class ScikitLearnEvaluator:
 
     @property
     def name(self):
-        return '{}_{}{}_reg-{}_cls-{}_{}fold{}_ckpt{}'.format(
+        return '{}_{}{}_reg-{}_cls-{}_{}fold{}{}{}_ckpt{}'.format(
             self.__class__.__name__,
             self.mode,
             f'_{self.n_train}train' if self.n_train is not None else '',
             self.model_names['reg'],
             self.model_names['cls'],
             self.n_fold,
+            '_TestonTrain' if self.testOnTrain else '',
+            '_TestInDist' if self.testInDist and not self.testOnTrain else '',
             '_rev' if self.reverse_task_type else '',
             self.checkpoint_name,
         )

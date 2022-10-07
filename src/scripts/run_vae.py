@@ -15,10 +15,10 @@ def main():
     config, sklearn_eval_cfg = setup_experiment(args)
 
     # setting hyperparameters
-    # for data in ('dsprites90d_random_v5', ):
-    for data in ('mpi3d_real_random_v6', ):
+    for data in ('dsprites90d_random_v5', ):
+    # for data in ('mpi3d_real_random_v5', ):
         for recon_loss, beta, arch in product(('bce', ),
-                                              (0, ),
+                                              (0, 1),
                                               ('base', )
                                               ):
             for seed in (2001, 2002, 2003):
@@ -29,25 +29,27 @@ def main():
 
                 config['exp_params']['train_steps'] = 500000
                 config['exp_params']['val_steps'] = 5000
-                config['exp_params']['max_epochs'] = 100
                 config['exp_params']['random_seed'] = seed
                 config['exp_params']['dataset'] = data
+                config['exp_params'][
+                    'data_path'] = 'YOUR_PATH_TO_DATA'
 
                 if 'mpi3d' in data:
                     config['exp_params'][
-                        'data_path'] = 'YourPathToData'
+                        'data_path'] = 'YOUR_PATH_TO_DATA'
                     config['model_params']['input_size'] = [3, 64, 64]
                     config['exp_params']['train_steps'] = 1000000
                     config['exp_params']['val_steps'] = 10000
 
                 train_vae(config, args)
 
-                if args.sklearn:
-                    # sklearn eval
-                    for mode, n_train in product(('pre', 'post', 'latent'), (1000, 500, 100), ):
+                if args.finetune:
+                    # for mode, n_train in product(('pre', 'post', 'latent'), (1000, 500, 100), ):
+                    for mode, n_train in product(('post', 'pre', 'latent'), (500, ), ):
                         config['eval_params'] = sklearn_eval_cfg
                         config['eval_params']['mode'] = mode
                         config['eval_params']['n_train'] = n_train
+                        config['eval_params']['testOnTrain'] = True
 
                         if args.gbt:
                             config['eval_params']['reg_model'] = 'GBTR'
