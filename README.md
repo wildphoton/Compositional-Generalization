@@ -1,5 +1,5 @@
 # CompGen
-This repository contains the official code for the paper: "Compositional Generalization in Unsupervised Representation Learning: From Disentanglement to Emergent Language" (NeurIPS2022). 
+This repository contains the official code for the paper: "Compositional Generalization in Unsupervised Compositional Representation Learning: A Study on Disentanglement and Emergent Language" (NeurIPS2022). 
 
 This work propose a new protocol of evaluating compositional generalization of learned representations. Our protocol focus on whether or not it is easy to train a simple
 model for downstream tasks on top of the learned representation that generalizes to new combinations of compositional factors. We systematically studied $\beta$-VAE, $\beta$-TCVAE and emergent language autoencoders.
